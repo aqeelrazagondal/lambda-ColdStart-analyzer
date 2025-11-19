@@ -1,0 +1,15 @@
+{
+  "name": "@lca/shared-kernel",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "rimraf": "^5.0.5"
+  }
+}

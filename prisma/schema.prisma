@@ -1,0 +1,100 @@
+// Prisma schema for Sprint 1
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  owner
+  admin
+  viewer
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships OrganizationUser[]
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users        OrganizationUser[]
+  awsAccounts  AwsAccount[]
+  functions    LambdaFunction[]
+}
+
+model OrganizationUser {
+  id     String  @id @default(cuid())
+  org    Organization @relation(fields: [orgId], references: [id])
+  orgId  String
+  user   User @relation(fields: [userId], references: [id])
+  userId String
+  role   OrgRole
+
+  @@unique([orgId, userId])
+}
+
+model AwsAccount {
+  id             String        @id @default(cuid())
+  org            Organization  @relation(fields: [orgId], references: [id])
+  orgId          String
+  awsAccountId   String
+  roleArn        String
+  externalId     String
+  defaultRegion  String?
+  connectedAt    DateTime?
+
+  functions LambdaFunction[]
+}
+
+model LambdaFunction {
+  id              String        @id @default(cuid())
+  org             Organization  @relation(fields: [orgId], references: [id])
+  orgId           String
+  awsAccount      AwsAccount    @relation(fields: [awsAccountId], references: [id])
+  awsAccountId    String
+  region          String
+  functionArn     String
+  functionName    String
+  runtime         String?
+  memoryMb        Int?
+  timeoutMs       Int?
+  lastScannedAt   DateTime?
+
+  coldStartMetrics ColdStartMetrics[]
+
+  @@index([orgId])
+  @@index([awsAccountId, region])
+  @@unique([orgId, functionArn])
+}
+
+// Sprint 2: cold start metrics snapshots aggregated per function and time window
+model ColdStartMetrics {
+  id               String         @id @default(cuid())
+  function         LambdaFunction @relation(fields: [functionId], references: [id])
+  functionId       String
+  periodStart      DateTime
+  periodEnd        DateTime
+  coldCount        Int            @default(0)
+  warmCount        Int            @default(0)
+  p50InitMs        Int?
+  p90InitMs        Int?
+  p99InitMs        Int?
+  source           String         @default("logs_insights")
+  createdAt        DateTime       @default(now())
+
+  @@index([functionId, periodStart])
+}

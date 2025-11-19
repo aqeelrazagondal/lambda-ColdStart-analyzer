@@ -1,0 +1,20 @@
+{
+  "name": "@lca/aws-client",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sts": "^3.679.0",
+    "@aws-sdk/client-lambda": "^3.679.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.679.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "rimraf": "^5.0.5"
+  }
+}

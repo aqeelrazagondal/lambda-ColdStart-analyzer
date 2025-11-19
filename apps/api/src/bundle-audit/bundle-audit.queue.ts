@@ -1,10 +1,7 @@
-import { InjectQueue, Process, Processor } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
-import { Queue, Job } from 'bullmq';
-import { BundleAuditAnalysisService } from './bundle-audit.analysis';
-
-export const BUNDLE_AUDIT_QUEUE = 'bundle-audit';
-const JOB_NAME = 'process-upload';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
+import { Queue } from 'bullmq';
+import { BUNDLE_AUDIT_JOB, BUNDLE_AUDIT_QUEUE } from './bundle-audit.constants';
 
 export interface BundleAuditJobPayload {
   uploadId: string;
@@ -16,7 +13,7 @@ export class BundleAuditQueueService {
 
   async enqueueUpload(uploadId: string) {
     await this.queue.add(
-      JOB_NAME,
+      BUNDLE_AUDIT_JOB,
       { uploadId },
       {
         attempts: 3,
@@ -25,19 +22,6 @@ export class BundleAuditQueueService {
         backoff: { type: 'exponential', delay: 5000 },
       }
     );
-  }
-}
-
-@Processor(BUNDLE_AUDIT_QUEUE)
-export class BundleAuditProcessor {
-  private readonly logger = new Logger(BundleAuditProcessor.name);
-
-  constructor(private readonly analysis: BundleAuditAnalysisService) {}
-
-  @Process(JOB_NAME)
-  async handle(job: Job<BundleAuditJobPayload>) {
-    this.logger.log(`Processing bundle upload ${job.data.uploadId}`);
-    await this.analysis.processUpload(job.data.uploadId);
   }
 }
 

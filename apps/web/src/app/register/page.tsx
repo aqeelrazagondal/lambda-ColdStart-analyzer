@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../providers/AuthContext';
 
 export default function RegisterPage() {
-  const { setAccessToken } = useAuth();
+  const { setAccessToken, setUser } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +28,7 @@ export default function RegisterPage() {
         throw new Error(data?.message || 'Register failed');
       }
       setAccessToken(data.accessToken);
+      setUser(data.user);
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Register failed');
@@ -34,27 +36,50 @@ export default function RegisterPage() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Register</h1>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, maxWidth: 360 }}>
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} type="text" style={{ width: '100%' }} />
-        </label>
-        <label>
-          Email
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required style={{ width: '100%' }} />
-        </label>
-        <label>
-          Password
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required style={{ width: '100%' }} />
-        </label>
-        {error && <div style={{ color: 'crimson' }}>{error}</div>}
-        <button type="submit">Create account</button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        Already have an account? <a href="/login">Login</a>
-      </p>
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-3xl)',
+      }}
+    >
+      <section
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--space-2xl)',
+          boxShadow: 'var(--shadow-sm)',
+          background: 'var(--surface)',
+        }}
+      >
+        <h1 style={{ marginTop: 0 }}>Create your workspace</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Spin up a new organization in seconds.</p>
+        <form onSubmit={onSubmit} style={{ display: 'grid', gap: 16, marginTop: 16 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Name
+            <input value={name} onChange={(e) => setName(e.target.value)} type="text" placeholder="Ada Lovelace" />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Email
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Password
+            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
+          </label>
+          {error && <div style={{ color: 'var(--danger)' }}>{error}</div>}
+          <button type="submit" data-variant="primary">
+            Create account
+          </button>
+        </form>
+        <p style={{ marginTop: 16 }}>
+          Already have an account? <Link href="/login">Log in</Link>
+        </p>
+      </section>
     </main>
   );
 }

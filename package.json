@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@types/node": "^20.11.30",
     "bcryptjs": "^2.4.3"
   }
 }

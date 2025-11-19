@@ -23,8 +23,15 @@ Lambda Cold-Start Analyzer helps engineering teams monitor, analyze, and optimiz
 - **Cold Start Monitoring**: Track cold vs warm invocations with P50/P90/P99 initialization durations
 - **Multi-Account Support**: Connect multiple AWS accounts with secure AssumeRole and ExternalId
 - **CloudWatch Integration**: Automatically query CloudWatch Logs Insights for detailed metrics
-- **Bundle Analysis**: (Coming soon) Analyze deployment package sizes and dependencies
-- **Performance Recommendations**: Get actionable insights to reduce cold start times
+- **Bundle Analysis**: Analyze deployment package sizes and dependencies with scoring and recommendations
+- **Multi-Region Support**: Track metrics across multiple AWS regions with region-specific snapshots
+- **Automated Scheduling**: Background jobs to automatically refresh metrics on a configurable schedule
+- **Alert System**: Get notified when functions exceed performance thresholds (P90 init time, cold ratio)
+- **Custom Dashboards**: Create and share team dashboards with key metrics and insights
+- **Team Activity Feed**: Track team actions and changes across your organization
+- **Notification Channels**: Configure Slack, email, or webhook notifications for alerts
+- **Search**: Quickly find functions, dashboards, bundles, and alerts across your organization
+- **Export Reports**: Download metrics as CSV or PDF for executive reporting
 
 ### Target Users
 
@@ -39,11 +46,13 @@ Lambda Cold-Start Analyzer helps engineering teams monitor, analyze, and optimiz
 Follow these six steps after `pnpm dev` is running (API on `:3001`, Web on `:3000`).
 
 ### 1. Create Your Workspace
+
 - Visit `http://localhost:3000/register`
 - Sign up with email + password
 - Create an organization to isolate team data and invite members later
 
 ### 2. Prepare an IAM Role
+
 Create a read-only IAM role in your AWS account with this permission policy:
 
 ```json
@@ -86,6 +95,7 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
 ```
 
 ### 3. Connect the AWS Account
+
 1. Navigate to **Settings → AWS Accounts** (`/settings/aws-accounts`)
 2. Click **Add AWS Account** and enter:
    - AWS Account ID (12 digits)
@@ -96,6 +106,7 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
 4. Click **Scan Lambdas** to ingest functions from the connected regions
 
 ### 4. Explore Lambda Inventory
+
 1. Select your organization from the top-left dropdown
 2. Open **Functions** (`/orgs/{orgId}/functions`)
 3. Filter instantly by:
@@ -104,6 +115,7 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
    - Text search for function name or part of it
 
 ### 5. Analyze Cold Starts
+
 1. Click a function to open its details page
 2. Review the **Cold Starts** tab:
    - Cold vs warm invocation counts
@@ -112,6 +124,7 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
 3. Use **Refresh Metrics** (1 request per 5 minutes per function) or **Copy Query** to run the CloudWatch Logs Insights query manually
 
 ### 6. Interpret & Act
+
 - **Healthy Baseline**
   - Cold start ratio under 5%
   - P50 init < 500 ms, P90 init < 1000 ms
@@ -123,6 +136,48 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
   - Enable provisioned concurrency for latency-sensitive paths
   - Reduce initialization work and lazy-load clients
   - Double-check VPC / subnet settings that can slow cold starts
+
+### 7. Run a Bundle Audit
+
+- Switch to the **Bundle Audit** tab inside the function detail page.
+- Upload the exact ZIP you deploy to Lambda; files are streamed to object storage, queued, and processed asynchronously.
+- Track upload status plus the latest score, total size, and dependency breakdown without leaving the page.
+- Review recommendations (e.g., “node_modules dominates size”) and top offenders to decide on layer splits or dependency pruning.
+
+### 8. Turn on Auto Refresh & Alerts
+
+- Ensure Redis is running (`docker compose up -d redis`) and set cron knobs (`METRICS_REFRESH_CRON`, `METRICS_REFRESH_TZ` and optional `METRICS_REFRESH_RANGE`).
+- The API will enqueue a daily job that refreshes metrics for every scheduled function/region.
+- Watch the **Alerts** panel on the function page or call `GET /functions/{id}/alerts` to review open warnings.
+- Tune thresholds via `ALERT_P90_THRESHOLD_MS` and `ALERT_COLD_RATIO` to match your latency budget.
+
+### 9. Customize Dashboards
+
+- Visit `/orgs/{orgId}/dashboard` to compose card-based dashboards for your team.
+- Add cards for P90 init, cold ratio, or bundle score, then drag data into executive status reports without leaving the web app.
+- Layouts are saved per-organization via the Dashboard API and can be shared with the rest of your team immediately.
+
+### 10. Toggle Dark Mode
+
+- Use the floating sun/moon button in the bottom-right corner to switch between light and dark themes.
+- Preferences are stored per-browser and synced with the OS color scheme on first load.
+
+### 11. View Organization Overview
+
+- Visit `/orgs/{orgId}` to see a comprehensive overview of your organization.
+- View key metrics: function count, bundle uploads, open alerts, connected AWS accounts.
+- Check the health score and top functions by performance.
+- Review recent activity feed and onboarding checklist.
+
+### 12. Search Across Resources
+
+- Use the search functionality to quickly find functions, dashboards, bundles, and alerts.
+- Search is available from the main navigation and supports partial name matching.
+
+### 13. Monitor Team Activity
+
+- View the activity feed at `/orgs/{orgId}/activity` to see recent team actions.
+- Track function scans, bundle uploads, dashboard changes, and more.
 
 ---
 
@@ -161,11 +216,15 @@ Keeping these checklists in dedicated files lets you iterate on delivery plans w
    pnpm install
    ```
 
-3. **Start PostgreSQL**
+3. **Start PostgreSQL & Redis**
 
    ```bash
-   docker compose up -d postgres
+   docker compose up -d postgres redis
    ```
+
+   Both services are required:
+   - **PostgreSQL**: Primary database for all application data
+   - **Redis**: Queue backend for background jobs (bundle processing, metrics refresh)
 
 4. **Configure environment**
 
@@ -173,6 +232,17 @@ Keeping these checklists in dedicated files lets you iterate on delivery plans w
    cp .env.example .env
    # Edit .env with your configuration
    ```
+
+   Key settings to review:
+   - `DATABASE_URL` → point at Postgres (default docker compose uses port 5433).
+   - `REDIS_URL` / `BUNDLE_AUDIT_QUEUE_URL` → BullMQ + scheduler queues (default: `redis://localhost:6379`).
+   - `BUNDLE_AUDIT_*` → S3/minio bucket, endpoint, and upload limits.
+   - `METRICS_REFRESH_CRON` → Cron expression for automatic metrics refresh (default: `0 3 * * *` = daily at 3 AM).
+   - `METRICS_REFRESH_TZ` → Timezone for cron schedule (default: `UTC`).
+   - `METRICS_REFRESH_RANGE` → Default time range for scheduled refreshes (default: `7d`).
+   - `ALERT_P90_THRESHOLD_MS` → P90 initialization time threshold in milliseconds (default: `2000`).
+   - `ALERT_COLD_RATIO` → Cold start ratio threshold (default: `0.1` = 10%).
+   - `DISABLE_METRICS_CRON` → Set to `true` to disable automatic metrics refresh.
 
 5. **Generate Prisma client**
 
@@ -218,7 +288,7 @@ Keeping these checklists in dedicated files lets you iterate on delivery plans w
 
 ### Workspace Layout
 
-```
+```text
 lambda-coldstart-analyzer/
 ├── apps/
 │   ├── api/                 # NestJS backend API
@@ -228,11 +298,25 @@ lambda-coldstart-analyzer/
 │   │   │   ├── aws-accounts/# AWS account connections
 │   │   │   ├── functions/   # Lambda function management
 │   │   │   ├── metrics/     # Cold start metrics
+│   │   │   ├── bundle-audit/# Bundle analysis & processing
+│   │   │   ├── scheduler/   # Background job scheduling
+│   │   │   ├── alerts/      # Performance alerting
+│   │   │   ├── dashboard/   # Custom dashboard management
+│   │   │   ├── activity/    # Team activity tracking
+│   │   │   ├── notifications/# Notification channels
+│   │   │   ├── overview/    # Organization overview
+│   │   │   ├── search/      # Global search
 │   │   │   └── health/      # Health check endpoints
 │   │   └── tests/
 │   └── web/                 # Next.js frontend
 │       └── src/
 │           └── app/         # App Router pages
+│               └── orgs/[orgId]/
+│                   ├── dashboard/  # Dashboard pages
+│                   ├── functions/  # Function listing & details
+│                   ├── bundles/    # Bundle audit pages
+│                   ├── alerts/     # Alert management
+│                   └── metrics/   # Metrics visualization
 ├── libs/
 │   ├── shared-kernel/       # Shared TypeScript types
 │   ├── aws-client/          # AWS SDK wrappers
@@ -242,7 +326,7 @@ lambda-coldstart-analyzer/
 │   ├── schema.prisma        # Database schema
 │   ├── migrations/          # Database migrations
 │   └── seed.js              # Seed script
-└── docker-compose.yml       # PostgreSQL container
+└── docker-compose.yml       # PostgreSQL & Redis containers
 ```
 
 ### Technology Stack
@@ -252,6 +336,8 @@ lambda-coldstart-analyzer/
 - NestJS 10 - Node.js framework
 - Prisma 5 - ORM and migrations
 - PostgreSQL 15 - Primary database
+- Redis - Queue and caching (via BullMQ)
+- BullMQ - Background job processing and scheduling
 - JWT - Authentication
 - AWS SDK v3 - AWS service integration
 - Passport - Auth strategies
@@ -268,7 +354,7 @@ lambda-coldstart-analyzer/
 - pnpm - Package manager
 - Turborepo - Monorepo build system
 - Docker - Containerization
-- Docker Compose - Local development
+- Docker Compose - Local development (PostgreSQL + Redis)
 
 ---
 
@@ -478,6 +564,272 @@ Response:
 }
 ```
 
+#### List Metric Regions
+
+```http
+GET /functions/{functionId}/regions
+Authorization: Bearer <token>
+```
+
+#### Region Metrics History
+
+```http
+GET /functions/{functionId}/metrics/regions?region=us-east-1&range=14d
+Authorization: Bearer <token>
+```
+
+#### Metrics Buckets (Charts)
+
+```http
+GET /functions/{functionId}/metrics/buckets?range=30d&region=us-east-1&buckets=24
+Authorization: Bearer <token>
+```
+
+#### Export Metrics CSV
+
+```http
+GET /functions/{functionId}/metrics/export.csv?range=14d&region=us-east-1
+Authorization: Bearer <token>
+```
+
+#### Export Metrics PDF
+
+```http
+GET /functions/{functionId}/metrics/export.pdf?range=14d&region=us-east-1
+Authorization: Bearer <token>
+```
+
+#### List Function Regions
+
+```http
+GET /functions/{functionId}/regions
+Authorization: Bearer <token>
+
+Response:
+{
+  "regions": ["us-east-1", "us-west-2"]
+}
+```
+
+### Bundle Audit
+
+#### Upload Bundle
+
+```http
+POST /orgs/{orgId}/functions/{functionId}/bundles
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file=@lambda-bundle.zip
+```
+
+Response:
+
+```json
+{
+  "id": "upload_cuid",
+  "status": "processing"
+}
+```
+
+#### List Bundle Uploads
+
+```http
+GET /orgs/{orgId}/functions/{functionId}/bundles?limit=10
+Authorization: Bearer <token>
+```
+
+#### Latest Insight
+
+```http
+GET /orgs/{orgId}/functions/{functionId}/bundles/latest
+Authorization: Bearer <token>
+```
+
+### Dashboards
+
+#### List Dashboards
+
+```http
+GET /orgs/{orgId}/dashboards
+Authorization: Bearer <token>
+```
+
+#### Create Dashboard
+
+```http
+POST /orgs/{orgId}/dashboards
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Ops overview",
+  "description": "surfacing p90 + bundle insights",
+  "config": "{\"cards\":[{\"title\":\"Cold ratio\",\"metric\":\"cold_ratio\"}]}"
+}
+```
+
+#### Update Dashboard
+
+```http
+PUT /orgs/{orgId}/dashboards/{dashboardId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{ "name": "Executive KPI" }
+```
+
+#### Delete Dashboard
+
+```http
+DELETE /orgs/{orgId}/dashboards/{dashboardId}
+Authorization: Bearer <token>
+```
+
+### Alerts
+
+#### List Function Alerts
+
+```http
+GET /functions/{functionId}/alerts
+Authorization: Bearer <token>
+
+Response:
+{
+  "alerts": [
+    {
+      "id": "...",
+      "region": "us-east-1",
+      "metric": "p90_init_ms",
+      "severity": "warning",
+      "message": "P90 init time (2500ms) exceeds threshold (2000ms)",
+      "status": "open",
+      "observedValue": 2500,
+      "threshold": 2000,
+      "createdAt": "2025-11-19T10:00:00Z"
+    }
+  ]
+}
+```
+
+### Team Activity
+
+#### List Organization Activity
+
+```http
+GET /orgs/{orgId}/activity?limit=20
+Authorization: Bearer <token>
+
+Response:
+{
+  "items": [
+    {
+      "id": "...",
+      "type": "function.scanned",
+      "message": "Scanned 42 Lambda functions",
+      "createdAt": "2025-11-19T10:00:00Z"
+    }
+  ]
+}
+```
+
+### Notification Channels
+
+#### List Notification Channels
+
+```http
+GET /orgs/{orgId}/notifications
+Authorization: Bearer <token>
+```
+
+#### Create Notification Channel
+
+```http
+POST /orgs/{orgId}/notifications
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "type": "slack",
+  "target": "https://hooks.slack.com/services/...",
+  "description": "Engineering team alerts"
+}
+```
+
+#### Update Notification Channel
+
+```http
+PATCH /orgs/{orgId}/notifications/{channelId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "enabled": false
+}
+```
+
+#### Delete Notification Channel
+
+```http
+DELETE /orgs/{orgId}/notifications/{channelId}
+Authorization: Bearer <token>
+```
+
+### Overview
+
+#### Get Organization Overview
+
+```http
+GET /orgs/{orgId}/overview
+Authorization: Bearer <token>
+
+Response:
+{
+  "functionCount": 42,
+  "bundleCount": 15,
+  "openAlerts": 3,
+  "accountsCount": 2,
+  "dashboardsCount": 5,
+  "notificationsCount": 2,
+  "health": {
+    "score": 85,
+    "status": "healthy"
+  },
+  "topFunctions": [...],
+  "recentBundles": [...],
+  "activity": [...],
+  "checklist": [...]
+}
+```
+
+### Search
+
+#### Search Organization Resources
+
+```http
+GET /orgs/{orgId}/search?q=api
+Authorization: Bearer <token>
+
+Response:
+{
+  "results": [
+    {
+      "id": "function-abc",
+      "label": "api-handler",
+      "type": "Function",
+      "href": "/orgs/{orgId}/functions/abc",
+      "meta": "us-east-1"
+    },
+    {
+      "id": "dashboard-xyz",
+      "label": "API Performance Dashboard",
+      "type": "Dashboard",
+      "href": "/orgs/{orgId}/dashboard#xyz"
+    }
+  ]
+}
+```
+
 ---
 
 ## Troubleshooting
@@ -543,6 +895,29 @@ PORT=3002
 - Reduce concurrent function scans
 - Increase `baseBackoffMs` and `maxBackoffMs` in client config
 - Wait for rate limit to reset (default: 5 minutes per function)
+
+### Bundle Audit Queue Not Processing
+
+**Problem**: Uploads stay in `processing` and no insights are generated
+
+**Solution**:
+
+1. Make sure Redis is running (`docker compose up -d redis`) and `REDIS_URL` points to it.
+2. Check API logs for BullMQ errors (missing bucket credentials, permission denied, etc.).
+3. Confirm the bundle bucket exists and the API has rights to read/write objects.
+4. Delete stuck uploads with `pnpm prisma studio` if needed and re-upload.
+
+### Metrics Refresh Not Running Automatically
+
+**Problem**: Scheduled metrics refresh jobs are not executing
+
+**Solution**:
+
+1. Verify Redis is running and accessible (`docker compose ps redis`).
+2. Check that `DISABLE_METRICS_CRON` is not set to `true`.
+3. Review API logs for scheduler initialization messages.
+4. Verify `METRICS_REFRESH_CRON` and `METRICS_REFRESH_TZ` are set correctly.
+5. Check that functions have refresh schedules enabled in the database.
 
 ### Migration Errors
 
@@ -610,4 +985,4 @@ MIT License - See LICENSE file for details
 ---
 
 **Last Updated**: 2025-11-19
-**Version**: 0.1.0 (Sprint 2 Complete)
+**Version**: 0.1.0 (Sprint 4 Complete)

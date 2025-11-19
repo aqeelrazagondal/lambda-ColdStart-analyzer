@@ -7,6 +7,6 @@ import { OrgRoleGuard } from './guards/org-role.guard';
 @Module({
   controllers: [OrgsController],
   providers: [OrgsService, OrgMemberGuard, OrgRoleGuard],
-  exports: [OrgsService],
+  exports: [OrgsService, OrgMemberGuard, OrgRoleGuard],
 })
 export class OrgsModule {}

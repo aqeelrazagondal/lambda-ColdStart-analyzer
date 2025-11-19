@@ -1,13 +1,24 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../providers/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '../../providers/ToastContext';
 
+export const dynamic = "force-dynamic";
+
+export default function AwsAccountsPage() {
+  return (
+    <Suspense fallback={<div>Loading AWS accounts…</div>}>
+      <AwsAccountsPageInner />
+    </Suspense>
+  );
+}
+
+
 interface OrgItem { id: string; name: string; createdAt: string; role: string }
 interface AwsAccount { id: string; awsAccountId: string; roleArn: string; externalId: string; defaultRegion?: string; connectedAt?: string }
 
-export default function AwsAccountsPage() {
+function AwsAccountsPageInner() {
   const { apiFetch } = useAuth();
   const { success, error: pushError, info } = useToast();
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -149,7 +160,7 @@ export default function AwsAccountsPage() {
           <label>
             AWS Account ID
             <input value={form.awsAccountId} onChange={(e) => setForm({ ...form, awsAccountId: e.target.value })} placeholder="123456789012" />
-            <div style={{ fontSize: 12, color: '#666' }}>Must be a 12-digit AWS account ID</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Must be a 12-digit AWS account ID</div>
           </label>
           <label>
             Role ARN
@@ -174,10 +185,10 @@ export default function AwsAccountsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #eee' }}>ID</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #eee' }}>AWS Account</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #eee' }}>Default Region</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #eee' }}>Actions</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>ID</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>AWS Account</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Default Region</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -193,7 +204,7 @@ export default function AwsAccountsPage() {
               </tr>
             ))}
             {accounts.length === 0 && (
-              <tr><td colSpan={4} style={{ color: '#666' }}>No connections</td></tr>
+              <tr><td colSpan={4} style={{ color: 'var(--text-muted)' }}>No connections</td></tr>
             )}
           </tbody>
         </table>

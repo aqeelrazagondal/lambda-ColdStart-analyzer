@@ -11,5 +11,8 @@
   "devDependencies": {
     "typescript": "^5.5.3",
     "rimraf": "^5.0.5"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.30"
   }
 }

@@ -7,8 +7,10 @@ build
 .DS_Store
 .env
 .env.*
+!.env.example
 coverage
 *.log
+/.pnpm-store
 /out-tsc
 
 /node_modules
@@ -19,3 +21,4 @@ yarn-error.log*
 .pnp.js
 
 .vscode/*
+.pnpm-store

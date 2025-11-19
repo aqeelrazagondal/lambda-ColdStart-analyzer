@@ -23,17 +23,17 @@ function test(title: string, fn: () => void | Promise<void>) {
 
 const pipe = new ValidationPipe({ whitelist: true, transform: true });
 
-test('RangeDto valid range passes (e.g., 7d)', () => {
+test('RangeDto valid range passes (e.g., 7d)', async () => {
   const obj: any = { range: '7d' };
-  const result = pipe.transform(obj, { type: 'query', metatype: RangeDto } as any) as RangeDto;
+  const result = (await pipe.transform(obj, { type: 'query', metatype: RangeDto } as any)) as RangeDto;
   assert.strictEqual(result.range, '7d');
 });
 
-test('RangeDto invalid range fails with 400 (e.g., 15x)', () => {
+test('RangeDto invalid range fails with 400 (e.g., 15x)', async () => {
   const obj: any = { range: '15x' };
   let threw = false;
   try {
-    pipe.transform(obj, { type: 'query', metatype: RangeDto } as any);
+    await pipe.transform(obj, { type: 'query', metatype: RangeDto } as any);
   } catch (e: any) {
     threw = e.getStatus?.() === 400;
     const res = e.getResponse?.();

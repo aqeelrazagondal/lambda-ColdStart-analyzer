@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, TooManyRequestsException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 
 // Simple in-memory rate limiter per userId:functionId key.
 // Allows one refresh every WINDOW_MS per key.
@@ -6,6 +6,10 @@ import { CanActivate, ExecutionContext, Injectable, TooManyRequestsException } f
 export class RefreshMetricsGuard implements CanActivate {
   private static readonly store: Map<string, number> = new Map(); // key -> nextAllowedEpochMs
   private static readonly WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+  static resetStore() {
+    RefreshMetricsGuard.store.clear();
+  }
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const http = context.switchToHttp();
@@ -24,10 +28,13 @@ export class RefreshMetricsGuard implements CanActivate {
       const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
       // Set Retry-After header
       try { res.setHeader('Retry-After', String(retryAfterSeconds)); } catch {}
-      throw new TooManyRequestsException({
-        message: 'Too many requests. Try again later.',
-        retryAfterSeconds,
-      });
+      throw new HttpException(
+        {
+          message: 'Too many requests. Try again later.',
+          retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS
+      );
     }
 
     // Allow and set next window

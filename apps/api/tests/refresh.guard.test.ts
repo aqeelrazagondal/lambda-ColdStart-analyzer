@@ -2,11 +2,12 @@
 // Run via: pnpm test:api
 
 import assert from 'assert';
-import { ExecutionContext, TooManyRequestsException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { RefreshMetricsGuard } from '../src/metrics/guards/refresh-metrics.guard';
 
 function test(title: string, fn: () => void | Promise<void>) {
   try {
+    RefreshMetricsGuard.resetStore();
     const r = fn();
     if (r && typeof (r as any).then === 'function') {
       (r as Promise<void>)
@@ -45,7 +46,8 @@ test('RefreshMetricsGuard: first call allowed, second within window blocked with
   try {
     guard.canActivate(ctx);
   } catch (e: any) {
-    threw = e instanceof TooManyRequestsException;
+    const status = typeof e?.getStatus === 'function' ? e.getStatus() : undefined;
+    threw = status === 429;
     // header should be set
     assert.ok(headers['Retry-After'] !== undefined, 'Retry-After header was not set');
     const body = e.getResponse?.();
@@ -54,7 +56,7 @@ test('RefreshMetricsGuard: first call allowed, second within window blocked with
       assert.ok(typeof retryAfterSeconds === 'number' || typeof retryAfterSeconds === 'string');
     }
   }
-  assert.ok(threw, 'Expected guard to throw TooManyRequestsException');
+  assert.ok(threw, 'Expected guard to throw a 429 TooManyRequestsException');
 });
 
 test('RefreshMetricsGuard: different user or function are tracked independently', () => {

@@ -1,6 +1,6 @@
 # Project Completion Tracker
 
-This tracker mirrors everything delivered through Sprint 2.
+This tracker mirrors everything delivered through Sprint 4.
 
 ## Backend Infrastructure
 - [x] NestJS API with TypeScript
@@ -46,4 +46,35 @@ This tracker mirrors everything delivered through Sprint 2.
 - [x] `@lca/aws-client` - AWS SDK wrappers
 - [x] `@lca/analysis` - Metrics aggregation and scoring
 - [x] `@lca/ui-components` - Reusable React components
+
+## Sprint 3: Bundle Audit
+- [x] Bundle upload endpoint with multipart file handling
+- [x] Background worker (BullMQ) for bundle processing
+- [x] Bundle extraction and analysis (size, dependencies)
+- [x] Bundle scoring algorithm (0-100)
+- [x] Top dependency identification
+- [x] Size recommendations and insights
+- [x] Bundle Audit UI tab in function detail page
+- [x] S3/MinIO integration for bundle storage
+- [x] Bundle upload status tracking
+
+## Sprint 4: Multi-Region & Scheduling
+- [x] Background scheduler with BullMQ and Redis
+- [x] Daily automatic metrics refresh worker
+- [x] Per-region metric snapshots (`RegionMetricsSnapshot`)
+- [x] Region selector in UI
+- [x] Historical trend visualization (P90 sparklines)
+- [x] Alert system for performance degradation
+- [x] Function refresh schedules (`FunctionRefreshSchedule`)
+- [x] Configurable alert thresholds (P90 init time, cold ratio)
+- [x] Alert status tracking (open/resolved)
+- [x] Custom dashboard management (`DashboardLayout`)
+- [x] Team activity feed (`TeamActivity`)
+- [x] Notification channels (`NotificationChannel`)
+- [x] Organization overview endpoint
+- [x] Global search across functions, dashboards, bundles, alerts
+- [x] Metrics export (CSV and PDF)
+- [x] Metrics buckets API for chart visualization
+- [x] Region-specific metrics endpoints
+- [x] Dark mode theme support
 

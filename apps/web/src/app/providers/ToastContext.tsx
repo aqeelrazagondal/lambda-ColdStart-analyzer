@@ -42,7 +42,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {/* Toast viewport */}
       <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'grid', gap: 8, zIndex: 1000 }}>
         {toasts.map((t) => (
           <div key={t.id}
@@ -51,12 +50,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                style={{
                  minWidth: 260,
                  maxWidth: 420,
-                 padding: '10px 12px',
-                 borderRadius: 8,
-                 color: '#0b0b0b',
-                 background: t.type === 'success' ? '#dcfce7' : t.type === 'error' ? '#fee2e2' : '#e5e7eb',
-                 border: '1px solid rgba(0,0,0,0.08)',
-                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                 padding: '12px 16px',
+                 borderRadius: 'var(--radius-lg)',
+                 color: 'var(--text-color)',
+                 background: t.type === 'success' ? 'rgba(16,185,129,0.15)' : t.type === 'error' ? 'rgba(248,113,113,0.18)' : 'var(--surface)',
+                 border: '1px solid var(--border-color)',
+                 boxShadow: 'var(--shadow-sm)'
                }}>
             <strong style={{ textTransform: 'capitalize' }}>{t.type}</strong>
             <div style={{ fontSize: 14 }}>{t.message}</div>

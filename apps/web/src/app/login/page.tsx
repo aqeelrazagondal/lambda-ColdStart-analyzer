@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../providers/AuthContext';
 
 export default function LoginPage() {
-  const { setAccessToken } = useAuth();
+  const { setAccessToken, setUser } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +27,7 @@ export default function LoginPage() {
         throw new Error(data?.message || 'Login failed');
       }
       setAccessToken(data.accessToken);
+      setUser(data.user);
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -33,23 +35,46 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Login</h1>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, maxWidth: 360 }}>
-        <label>
-          Email
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required style={{ width: '100%' }} />
-        </label>
-        <label>
-          Password
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required style={{ width: '100%' }} />
-        </label>
-        {error && <div style={{ color: 'crimson' }}>{error}</div>}
-        <button type="submit">Login</button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        No account? <a href="/register">Register</a>
-      </p>
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-3xl)',
+      }}
+    >
+      <section
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--space-2xl)',
+          boxShadow: 'var(--shadow-sm)',
+          background: 'var(--surface)',
+        }}
+      >
+        <h1 style={{ marginTop: 0 }}>Sign in</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Welcome back. Sign in to continue.</p>
+        <form onSubmit={onSubmit} style={{ display: 'grid', gap: 16, marginTop: 16 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Email
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Password
+            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
+          </label>
+          {error && <div style={{ color: 'var(--danger)' }}>{error}</div>}
+          <button type="submit" data-variant="primary">
+            Login
+          </button>
+        </form>
+        <p style={{ marginTop: 16 }}>
+          No account? <Link href="/register">Register</Link>
+        </p>
+      </section>
     </main>
   );
 }

@@ -4,3 +4,4 @@
 import './range.util.test';
 import './refresh.guard.test';
 import './controller.validation.test';
+import './bundle.helpers.test';

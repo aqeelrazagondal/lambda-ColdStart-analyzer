@@ -24,6 +24,9 @@ model User {
   updatedAt    DateTime @updatedAt
 
   memberships OrganizationUser[]
+  bundleUploads BundleUpload[]
+  dashboardLayouts DashboardLayout[]
+  activities TeamActivity[]
 }
 
 model Organization {
@@ -34,6 +37,10 @@ model Organization {
   users        OrganizationUser[]
   awsAccounts  AwsAccount[]
   functions    LambdaFunction[]
+  bundleUploads BundleUpload[]
+  dashboardLayouts DashboardLayout[]
+  activities    TeamActivity[]
+  notificationChannels NotificationChannel[]
 }
 
 model OrganizationUser {
@@ -75,6 +82,12 @@ model LambdaFunction {
   lastScannedAt   DateTime?
 
   coldStartMetrics ColdStartMetrics[]
+  bundleUploads    BundleUpload[]
+  bundleInsights   BundleInsight[]
+  refreshSchedule FunctionRefreshSchedule?
+  regionSnapshots RegionMetricsSnapshot[]
+  alerts          FunctionAlert[]
+  activities      TeamActivity[]
 
   @@index([orgId])
   @@index([awsAccountId, region])
@@ -97,4 +110,152 @@ model ColdStartMetrics {
   createdAt        DateTime       @default(now())
 
   @@index([functionId, periodStart])
+}
+
+enum BundleUploadStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+model BundleUpload {
+  id               String              @id @default(cuid())
+  org              Organization        @relation(fields: [orgId], references: [id])
+  orgId            String
+  function         LambdaFunction      @relation(fields: [functionId], references: [id])
+  functionId       String
+  uploadedBy       User?               @relation(fields: [uploadedByUserId], references: [id])
+  uploadedByUserId String?
+  originalFilename String
+  storageBucket    String
+  storageKey       String
+  sizeBytes        Int
+  status           BundleUploadStatus  @default(pending)
+  errorMessage     String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  processedAt      DateTime?
+
+  insight BundleInsight?
+
+  @@index([orgId])
+  @@index([functionId])
+}
+
+model BundleInsight {
+  id                  String         @id @default(cuid())
+  upload              BundleUpload   @relation(fields: [uploadId], references: [id])
+  uploadId            String         @unique
+  function            LambdaFunction @relation(fields: [functionId], references: [id])
+  functionId          String
+  totalSizeBytes      Int
+  uncompressedBytes   Int?
+  fileCount           Int?
+  dependencyCount     Int?
+  score               Int
+  topDependencies     Json?
+  sizeBreakdown       Json?
+  recommendations     Json?
+  createdAt           DateTime       @default(now())
+
+  @@index([functionId])
+}
+
+
+model FunctionRefreshSchedule {
+  id        String         @id @default(cuid())
+  function  LambdaFunction @relation(fields: [functionId], references: [id])
+  functionId String        @unique
+  cron      String         @default("0 3 * * *")
+  timezone  String         @default("UTC")
+  enabled   Boolean        @default(true)
+  range     String         @default("7d")
+  regions   Json?
+  lastRunAt DateTime?
+  lastRunStatus String?
+  lastRunError String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+
+model RegionMetricsSnapshot {
+  id          String         @id @default(cuid())
+  function    LambdaFunction @relation(fields: [functionId], references: [id])
+  functionId  String
+  region      String
+  periodStart DateTime
+  periodEnd   DateTime
+  coldCount   Int            @default(0)
+  warmCount   Int            @default(0)
+  p50InitMs   Int?
+  p90InitMs   Int?
+  p99InitMs   Int?
+  createdAt   DateTime       @default(now())
+
+  @@index([functionId, region, periodStart])
+}
+
+model FunctionAlert {
+  id            String         @id @default(cuid())
+  function      LambdaFunction @relation(fields: [functionId], references: [id])
+  functionId    String
+  region        String
+  metric        String
+  severity      String         @default("warning")
+  message       String
+  status        String         @default("open")
+  observedValue Int?
+  threshold     Int?
+  createdAt     DateTime       @default(now())
+  resolvedAt    DateTime?
+
+  @@index([functionId, status])
+}
+
+model DashboardLayout {
+  id          String        @id @default(cuid())
+  org         Organization  @relation(fields: [orgId], references: [id])
+  orgId       String
+  name        String
+  description String?
+  config      Json
+  createdBy   User?         @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([orgId])
+}
+
+model TeamActivity {
+  id          String        @id @default(cuid())
+  org         Organization  @relation(fields: [orgId], references: [id])
+  orgId       String
+  function    LambdaFunction? @relation(fields: [functionId], references: [id])
+  functionId  String?
+  user        User?         @relation(fields: [userId], references: [id])
+  userId      String?
+  type        String
+  message     String
+  payload     Json?
+  createdAt   DateTime      @default(now())
+
+  @@index([orgId, createdAt])
+}
+
+model NotificationChannel {
+  id          String        @id @default(cuid())
+  org         Organization  @relation(fields: [orgId], references: [id])
+  orgId       String
+  type        String
+  target      String
+  description String?
+  enabled     Boolean       @default(true)
+  config      Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([orgId])
 }

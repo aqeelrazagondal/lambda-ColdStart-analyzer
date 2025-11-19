@@ -5,16 +5,23 @@ export const metadata = {
 
 import { AuthProvider } from './providers/AuthContext';
 import { ToastProvider } from './providers/ToastContext';
+import { ThemeProvider } from './providers/ThemeContext';
+import { ThemeToggle } from './components/ThemeToggle';
+import { ThemeStyles } from './components/ThemeStyles';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body style={{ margin: 0 }}>
-        <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <ThemeStyles />
+          <AuthProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </AuthProvider>
+          <ThemeToggle />
+        </ThemeProvider>
       </body>
     </html>
   );

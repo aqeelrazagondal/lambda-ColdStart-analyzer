@@ -1,4 +1,4 @@
-import { Process, Processor } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { METRICS_REFRESH_JOB, METRICS_REFRESH_QUEUE } from './scheduler.constants';
@@ -7,13 +7,14 @@ import { MetricsService } from '../metrics/metrics.service';
 import { Prisma } from '@prisma/client';
 
 @Processor(METRICS_REFRESH_QUEUE)
-export class SchedulerProcessor {
+export class SchedulerProcessor extends WorkerHost {
   private readonly logger = new Logger(SchedulerProcessor.name);
 
-  constructor(private readonly config: SchedulerConfigService, private readonly metrics: MetricsService) {}
+  constructor(private readonly config: SchedulerConfigService, private readonly metrics: MetricsService) {
+    super();
+  }
 
-  @Process(METRICS_REFRESH_JOB)
-  async handleMetricsRefresh(job: Job) {
+  async process(job: Job) {
     this.logger.log(`Received metrics refresh trigger (jobId=${job.id})`);
     const schedules = await this.config.listActiveSchedules();
     const defaultRange = process.env.METRICS_REFRESH_RANGE || '7d';

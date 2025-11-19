@@ -3,6 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { BUNDLE_AUDIT_JOB, BUNDLE_AUDIT_QUEUE } from './bundle-audit.constants';
 
+// Re-export for module imports
+export { BUNDLE_AUDIT_QUEUE } from './bundle-audit.constants';
+
 export interface BundleAuditJobPayload {
   uploadId: string;
 }

@@ -183,8 +183,9 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
 
 ## Project Tracking
 
-- **Project Completion Tracker** – Detailed checklist of everything shipped through Sprint 2 is now in [`docs/project-completion.md`](./docs/project-completion.md).
+- **Project Completion Tracker** – Detailed checklist of everything shipped through Sprint 4 is now in [`docs/project-completion.md`](./docs/project-completion.md).
 - **Todo & Roadmap** – Upcoming sprints, UX polish, and long-term initiatives live in [`docs/todo-backlog.md`](./docs/todo-backlog.md).
+- **Complete Test Flow** – Comprehensive step-by-step testing guide covering all features from setup to end-to-end testing in [`docs/test-flow.md`](./docs/test-flow.md).
 
 Keeping these checklists in dedicated files lets you iterate on delivery plans without inflating the main README.
 

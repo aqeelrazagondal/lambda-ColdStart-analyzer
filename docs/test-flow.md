@@ -183,14 +183,18 @@ pnpm dev
    d. **Account ID**: Enter the AWS account ID that will **assume** this role
    
    **⚠️ Critical for Cross-Account Setup**:
-   - If your application/user credentials are in account `005023962834` and the role will be in account `173148986568`, enter `005023962834` here (the account that will assume the role)
+   - If your application/user credentials are in account `YOUR_ACCOUNT_ID` and the role will be in account `TARGET_ACCOUNT_ID`, enter `YOUR_ACCOUNT_ID` here (the account that will assume the role)
    - The Principal in the trust policy will be set to allow this account to assume the role
    - For same-account setup, enter the same account ID where the role exists
    
+   **How to find YOUR_ACCOUNT_ID**:
+   - Check your local AWS credentials: `aws sts get-caller-identity` or look at `~/.aws/credentials`
+   - Or check the error message if you get one - it shows your account ID in the user ARN
+   
    **Example**:
-   - Your AWS credentials (user/app): Account `005023962834`
-   - Target AWS account (where Lambdas are): Account `173148986568`
-   - **Enter `005023962834` in the Account ID field** (not `173148986568`)
+   - Your AWS credentials (user/app): Account `YOUR_ACCOUNT_ID` (where your local credentials are from)
+   - Target AWS account (where Lambdas are): Account `TARGET_ACCOUNT_ID` (where the role exists)
+   - **Enter `YOUR_ACCOUNT_ID` in the Account ID field** (not `TARGET_ACCOUNT_ID`)
    
    e. **Options**: Check "Require external ID"
    
@@ -264,33 +268,33 @@ pnpm dev
 
 If you get an error like:
 ```
-User: arn:aws:iam::005023962834:user/username is not authorized to perform: 
-sts:AssumeRole on resource: arn:aws:iam::173148986568:role/LambdaColdStartAnalyzerRole
+User: arn:aws:iam::YOUR_ACCOUNT_ID:user/username is not authorized to perform: 
+sts:AssumeRole on resource: arn:aws:iam::TARGET_ACCOUNT_ID:role/LambdaColdStartAnalyzerRole
 ```
 
 **The Problem**: The trust policy Principal doesn't match the account trying to assume the role.
 
-**Your Situation**:
-- Your AWS user/credentials: Account `005023962834` ✓
-- Role exists in: Account `173148986568` ✓
-- Trust policy Principal: `arn:aws:iam::173148986568:root` ❌ (WRONG!)
+**How to identify your account ID**:
+- The error message shows: `User: arn:aws:iam::YOUR_ACCOUNT_ID:user/username`
+- Extract the account ID from that ARN (the 12-digit number)
+- This is the account where your local AWS credentials are from
+
+**Example Situation**:
+- Your AWS user/credentials: Account `YOUR_ACCOUNT_ID` (from error message) ✓
+- Role exists in: Account `TARGET_ACCOUNT_ID` (where Lambdas are) ✓
+- Trust policy Principal: `arn:aws:iam::TARGET_ACCOUNT_ID:root` ❌ (WRONG!)
 
 **The Fix**:
 1. Go to IAM Console → Roles → `LambdaColdStartAnalyzerRole`
 2. Click **Trust relationships** tab
 3. Click **Edit trust policy**
-4. Change the Principal from:
+4. Change the Principal to use the account ID from your error message:
    ```json
    "Principal": {
-     "AWS": "arn:aws:iam::173148986568:root"
+     "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root"
    }
    ```
-   To (use the account that will assume the role):
-   ```json
-   "Principal": {
-     "AWS": "arn:aws:iam::005023962834:root"
-   }
-   ```
+   Replace `YOUR_ACCOUNT_ID` with the account ID shown in the error message
 5. Keep the ExternalId condition as-is
 6. Click **Update policy**
 
@@ -302,7 +306,7 @@ sts:AssumeRole on resource: arn:aws:iam::173148986568:role/LambdaColdStartAnalyz
     {
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::005023962834:root"
+        "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root"
       },
       "Action": "sts:AssumeRole",
       "Condition": {

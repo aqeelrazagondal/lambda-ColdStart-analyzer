@@ -137,13 +137,15 @@ If you see this **default template** in AWS Console when editing the trust polic
 
 **⚠️ Troubleshooting AssumeRole Errors**:
 
-If you see: `User: arn:aws:iam::005023962834:user/username is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::173148986568:role/RoleName`
+If you see: `User: arn:aws:iam::YOUR_ACCOUNT_ID:user/username is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::TARGET_ACCOUNT_ID:role/RoleName`
+
+**How to find YOUR_ACCOUNT_ID**: Extract it from the error message - it's the account ID in the user ARN shown in the error.
 
 **The Fix**: Edit the role's trust policy Principal to match the account that will assume the role:
 - Go to IAM → Roles → Your Role → Trust relationships → Edit trust policy
-- Change `"Principal": { "AWS": "arn:aws:iam::173148986568:root" }` 
-- To: `"Principal": { "AWS": "arn:aws:iam::005023962834:root" }` (the account with your credentials)
-- The Principal is the account that will ASSUME the role, NOT where the role exists
+- Change `"Principal": { "AWS": "arn:aws:iam::TARGET_ACCOUNT_ID:root" }` 
+- To: `"Principal": { "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root" }` (the account with your credentials from the error message)
+- The Principal is the account that will ASSUME the role (where your local credentials are), NOT where the role exists
 
 ### 3. Connect the AWS Account
 

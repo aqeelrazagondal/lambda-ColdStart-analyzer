@@ -28,6 +28,7 @@ export default function BundlesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const [primaryFunctionId, setPrimaryFunctionId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!orgId) return;
@@ -43,6 +44,12 @@ export default function BundlesPage() {
       const res = await apiFetch(`${apiBase}/orgs/${orgId}/functions`);
       const functionsRes = await res.json();
       if (!res.ok) throw new Error(functionsRes?.message || 'Failed to load functions');
+
+      if (Array.isArray(functionsRes?.items) && functionsRes.items.length > 0) {
+        setPrimaryFunctionId(functionsRes.items[0].id);
+      } else {
+        setPrimaryFunctionId(undefined);
+      }
 
       const allBundles: BundleUpload[] = [];
       for (const fn of functionsRes.items || []) {
@@ -82,7 +89,13 @@ export default function BundlesPage() {
             <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', margin: '0 0 var(--space-2) 0' }}>Bundle Uploads</h1>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Analyze Lambda deployment packages and optimize bundle size</p>
           </div>
-          <Link href={`/orgs/${orgId}/functions`}>
+          <Link
+            href={
+              primaryFunctionId
+                ? `/orgs/${orgId}/functions/${primaryFunctionId}?tab=bundle-audit`
+                : `/orgs/${orgId}/functions`
+            }
+          >
             <Button variant="primary">Upload Bundle</Button>
           </Link>
         </div>

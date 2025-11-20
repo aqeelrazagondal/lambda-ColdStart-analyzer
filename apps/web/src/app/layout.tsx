@@ -188,11 +188,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               color: var(--text-primary);
               min-height: 100vh;
               transition: background-color var(--transition-base), color var(--transition-base);
+              visibility: visible;
+              opacity: 1;
+            }
+            
+            /* Ensure content is visible once styles are loaded */
+            body[data-styled='true'] {
+              visibility: visible;
+              opacity: 1;
             }
             
             /* Prevent flash by setting default styles immediately */
             #__next, [data-nextjs-scroll-focus-boundary] {
               min-height: 100vh;
+            }
+            
+            /* Base element styles for immediate rendering */
+            a {
+              color: var(--color-primary);
+              text-decoration: none;
+            }
+            
+            button {
+              font-family: inherit;
+              cursor: pointer;
+            }
+            
+            input, textarea, select {
+              font-family: inherit;
             }
           `
         }} />

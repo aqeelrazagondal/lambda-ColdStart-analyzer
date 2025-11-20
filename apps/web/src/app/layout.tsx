@@ -26,7 +26,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   }
                   document.documentElement.setAttribute('data-theme', theme);
                   document.body.setAttribute('data-theme', theme);
-                } catch (e) {}
+                  // Mark body as styled to prevent FOUC
+                  document.body.setAttribute('data-styled', 'true');
+                } catch (e) {
+                  // Fallback: mark as styled even on error
+                  try {
+                    document.body.setAttribute('data-styled', 'true');
+                  } catch (e2) {}
+                }
               })();
             `,
           }}

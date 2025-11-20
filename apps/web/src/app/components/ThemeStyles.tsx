@@ -1,6 +1,15 @@
 "use client";
 
+import { useEffect } from 'react';
+
 export function ThemeStyles() {
+  useEffect(() => {
+    // Ensure body is marked as styled once component mounts
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-styled', 'true');
+    }
+  }, []);
+  
   return (
     <style jsx global>{`
       :root {

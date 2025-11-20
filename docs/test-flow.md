@@ -180,7 +180,17 @@ pnpm dev
    
    c. Select **Trusted entity type**: `AWS account`
    
-   d. **Account ID**: Enter your AWS account ID (12 digits)
+   d. **Account ID**: Enter the AWS account ID that will **assume** this role
+   
+   **⚠️ Critical for Cross-Account Setup**:
+   - If your application/user credentials are in account `005023962834` and the role will be in account `173148986568`, enter `005023962834` here (the account that will assume the role)
+   - The Principal in the trust policy will be set to allow this account to assume the role
+   - For same-account setup, enter the same account ID where the role exists
+   
+   **Example**:
+   - Your AWS credentials (user/app): Account `005023962834`
+   - Target AWS account (where Lambdas are): Account `173148986568`
+   - **Enter `005023962834` in the Account ID field** (not `173148986568`)
    
    e. **Options**: Check "Require external ID"
    
@@ -249,6 +259,66 @@ pnpm dev
    - Save this ARN for Step 3.2
 
 **Expected Result**: IAM role created with ARN saved.
+
+**🔧 Troubleshooting: "User is not authorized to perform: sts:AssumeRole" Error**
+
+If you get an error like:
+```
+User: arn:aws:iam::005023962834:user/username is not authorized to perform: 
+sts:AssumeRole on resource: arn:aws:iam::173148986568:role/LambdaColdStartAnalyzerRole
+```
+
+**The Problem**: The trust policy Principal doesn't match the account trying to assume the role.
+
+**Your Situation**:
+- Your AWS user/credentials: Account `005023962834` ✓
+- Role exists in: Account `173148986568` ✓
+- Trust policy Principal: `arn:aws:iam::173148986568:root` ❌ (WRONG!)
+
+**The Fix**:
+1. Go to IAM Console → Roles → `LambdaColdStartAnalyzerRole`
+2. Click **Trust relationships** tab
+3. Click **Edit trust policy**
+4. Change the Principal from:
+   ```json
+   "Principal": {
+     "AWS": "arn:aws:iam::173148986568:root"
+   }
+   ```
+   To (use the account that will assume the role):
+   ```json
+   "Principal": {
+     "AWS": "arn:aws:iam::005023962834:root"
+   }
+   ```
+5. Keep the ExternalId condition as-is
+6. Click **Update policy**
+
+**Corrected Trust Policy**:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::005023962834:root"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "lca-external-id-2025-11-19"
+        }
+      }
+    }
+  ]
+}
+```
+
+**Remember**: 
+- **Principal** = Account that will ASSUME the role (where your app/user is)
+- **Role ARN** = Account where the role EXISTS (where your Lambdas are)
+- These can be different accounts (cross-account setup)
 
 ### Step 3.2: Connect AWS Account in Application
 

@@ -84,7 +84,9 @@ Create a read-only IAM role in your AWS account with the following steps:
 2. **Create IAM Role** (in IAM → Roles):
    - Click "Create role"
    - Select "AWS account" as trusted entity
-   - Enter your AWS account ID (12 digits)
+   - **Account ID**: Enter the AWS account ID that will **assume** this role
+     - ⚠️ **For cross-account setup**: If your app/user is in account `A` and Lambdas are in account `B`, enter account `A` here (the account that will assume the role)
+     - The Principal in trust policy allows this account to assume the role
    - Check "Require external ID" and provide a unique string (e.g., `lca-external-id-2025-11-19`)
    - The trust policy is automatically generated (it will have a Principal and no Resource field)
    - Attach the `LambdaColdStartAnalyzerReadOnly` policy created in step 1
@@ -132,6 +134,16 @@ If you see this **default template** in AWS Console when editing the trust polic
 ```
 
 **Note**: When you select "AWS account" and check "Require external ID" in the console, AWS typically generates this automatically. Trust policies have a Principal (who can assume the role) and do NOT have a Resource field.
+
+**⚠️ Troubleshooting AssumeRole Errors**:
+
+If you see: `User: arn:aws:iam::005023962834:user/username is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::173148986568:role/RoleName`
+
+**The Fix**: Edit the role's trust policy Principal to match the account that will assume the role:
+- Go to IAM → Roles → Your Role → Trust relationships → Edit trust policy
+- Change `"Principal": { "AWS": "arn:aws:iam::173148986568:root" }` 
+- To: `"Principal": { "AWS": "arn:aws:iam::005023962834:root" }` (the account with your credentials)
+- The Principal is the account that will ASSUME the role, NOT where the role exists
 
 ### 3. Connect the AWS Account
 

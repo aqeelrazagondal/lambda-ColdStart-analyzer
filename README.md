@@ -53,29 +53,46 @@ Follow these six steps after `pnpm dev` is running (API on `:3001`, Web on `:300
 
 ### 2. Prepare an IAM Role
 
-Create a read-only IAM role in your AWS account with this permission policy:
+Create a read-only IAM role in your AWS account with the following steps:
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "lambda:ListFunctions",
-        "lambda:GetFunction",
-        "logs:StartQuery",
-        "logs:GetQueryResults",
-        "logs:DescribeLogGroups"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
+1. **Create Permissions Policy** (in IAM → Policies):
+   - Click "Create policy" → Switch to JSON tab
+   - Paste this **permissions policy**:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": [
+           "lambda:ListFunctions",
+           "lambda:GetFunction",
+           "lambda:GetFunctionConfiguration",
+           "logs:StartQuery",
+           "logs:GetQueryResults",
+           "logs:DescribeLogGroups",
+           "logs:DescribeLogStreams"
+         ],
+         "Resource": "*"
+       }
+     ]
+   }
+   ```
+   - Name: `LambdaColdStartAnalyzerReadOnly`
+   - Note: This policy does NOT need a Principal field (that's only for trust policies)
 
-Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalId` you will paste into the app):
+2. **Create IAM Role** (in IAM → Roles):
+   - Click "Create role"
+   - Select "AWS account" as trusted entity
+   - Enter your AWS account ID (12 digits)
+   - Check "Require external ID" and provide a unique string (e.g., `lca-external-id-2025-11-19`)
+   - The trust policy is automatically generated (it will have a Principal and no Resource field)
+   - Attach the `LambdaColdStartAnalyzerReadOnly` policy created in step 1
+   - Name the role: `LambdaColdStartAnalyzerRole`
 
+3. **Copy the Role ARN** for use in the next step (format: `arn:aws:iam::YOUR_ACCOUNT:role/LambdaColdStartAnalyzerRole`)
+
+**Important**: The trust policy is automatically created when you configure the role with "AWS account" + external ID. It will look like:
 ```json
 {
   "Version": "2012-10-17",
@@ -93,6 +110,7 @@ Attach this trust policy (replace `YOUR_ACCOUNT` and provide a unique `ExternalI
   ]
 }
 ```
+You don't need to manually create this - AWS Console generates it automatically.
 
 ### 3. Connect the AWS Account
 

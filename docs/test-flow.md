@@ -128,27 +128,17 @@ pnpm dev
    - Navigate to IAM service
    - Go to **Roles** section
 
-2. **Create IAM Role for Lambda Cold-Start Analyzer**
+2. **Create Permissions Policy First (Before Creating Role)**
 
-   a. Click **Create role**
+   **Important**: Create the permissions policy first, then attach it to the role during role creation.
    
-   b. Select **Trusted entity type**: `AWS account`
+   a. In IAM console, go to **Policies** section (not Roles)
    
-   c. **Account ID**: Enter your AWS account ID (12 digits)
+   b. Click **Create policy**
    
-   d. **Options**: Check "Require external ID"
+   c. Switch to **JSON** tab
    
-   e. **External ID**: Generate a unique string (e.g., `lca-external-id-2025-11-19`)
-   
-   f. Click **Next**
-
-3. **Attach Permissions Policy**
-
-   a. Click **Create policy**
-   
-   b. Switch to **JSON** tab
-   
-   c. Paste the following policy:
+   d. Delete any default JSON and paste the following **permissions policy**:
    ```json
    {
      "Version": "2012-10-17",
@@ -170,15 +160,65 @@ pnpm dev
    }
    ```
    
-   d. Name: `LambdaColdStartAnalyzerReadOnly`
+   **Note**: This is a permissions policy (not a trust policy). It does NOT need a Principal field - that's only for trust policies.
    
-   e. Click **Create policy**
+   e. Click **Next**
    
-   f. Go back to role creation, refresh, and select the policy
+   f. **Policy name**: `LambdaColdStartAnalyzerReadOnly`
+   
+   g. **Description**: `Read-only access for Lambda and CloudWatch Logs`
+   
+   h. Click **Create policy**
+   
+   i. Remember this policy name for the next step
+
+3. **Create IAM Role for Lambda Cold-Start Analyzer**
+
+   a. Go to **Roles** section in IAM console
+   
+   b. Click **Create role**
+   
+   c. Select **Trusted entity type**: `AWS account`
+   
+   d. **Account ID**: Enter your AWS account ID (12 digits)
+   
+   e. **Options**: Check "Require external ID"
+   
+   f. **External ID**: Generate a unique string (e.g., `lca-external-id-2025-11-19`)
+   
+   **Note**: The trust policy is automatically generated when you configure these settings. You don't need to manually edit the trust policy JSON. The automatically generated trust policy will look like:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root"
+         },
+         "Action": "sts:AssumeRole",
+         "Condition": {
+           "StringEquals": {
+             "sts:ExternalId": "lca-external-id-2025-11-19"
+           }
+         }
+       }
+     ]
+   }
+   ```
+   **Do not modify this** - it's correct as-is. Trust policies have a Principal (who can assume the role) and do NOT have a Resource field.
    
    g. Click **Next**
 
-4. **Name and Create Role**
+4. **Attach Permissions Policy to Role**
+
+   a. On the "Add permissions" page, search for: `LambdaColdStartAnalyzerReadOnly`
+   
+   b. Check the box next to the policy you created in step 2
+   
+   c. Click **Next**
+
+5. **Name and Create Role**
 
    a. **Role name**: `LambdaColdStartAnalyzerRole`
    
@@ -186,7 +226,7 @@ pnpm dev
    
    c. Click **Create role**
 
-5. **Copy Role ARN**
+6. **Copy Role ARN**
 
    - Format: `arn:aws:iam::123456789012:role/LambdaColdStartAnalyzerRole`
    - Save this ARN for Step 3.2

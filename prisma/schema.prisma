@@ -27,6 +27,8 @@ model User {
   bundleUploads BundleUpload[]
   dashboardLayouts DashboardLayout[]
   activities TeamActivity[]
+  refreshTokens RefreshToken[]
+  sessions Session[]
 }
 
 model Organization {
@@ -41,6 +43,7 @@ model Organization {
   dashboardLayouts DashboardLayout[]
   activities    TeamActivity[]
   notificationChannels NotificationChannel[]
+  auditRetentionPolicy AuditRetentionPolicy?
 }
 
 model OrganizationUser {
@@ -258,4 +261,78 @@ model NotificationChannel {
   updatedAt   DateTime      @updatedAt
 
   @@index([orgId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  session   Session?
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String? @unique
+  refreshToken RefreshToken? @relation(fields: [refreshTokenId], references: [id], onDelete: Cascade)
+  device      String?
+  ipAddress   String?
+  userAgent   String?
+  lastActivityAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([lastActivityAt])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  orgId         String?
+  action        String
+  resourceType  String?
+  resourceId    String?
+  ipAddress     String?
+  userAgent     String?
+  requestMethod String?
+  requestPath   String?
+  requestBody   Json?
+  responseStatus Int?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([orgId, createdAt])
+  @@index([action, createdAt])
+  @@index([resourceType, resourceId])
+}
+
+model AuditRetentionPolicy {
+  id            String   @id @default(cuid())
+  orgId         String   @unique
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  retentionDays Int      @default(90)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SecretRotation {
+  id          String   @id @default(cuid())
+  secretName  String
+  rotatedAt   DateTime @default(now())
+  rotatedBy   String?
+  status      String   // 'success' | 'failed'
+  errorMessage String?
+
+  @@index([secretName, rotatedAt])
+  @@index([rotatedBy])
 }

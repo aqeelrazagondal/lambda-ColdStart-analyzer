@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const params = useParams<{ orgId: string }>();
   const orgId = params?.orgId;
   const { overview, loadingOverview, refreshOverview, demoMode, setDemoMode } = useOrgData();
-  const { apiFetch } = useAuth();
+  const { apiFetch, accessToken, loadingUser } = useAuth();
   const [activityFilter, setActivityFilter] = useState<'all' | 'bundle' | 'alert' | 'notification'>('all');
   const [dashboards, setDashboards] = useState<DashboardLayout[]>([]);
   const [dashboardsLoading, setDashboardsLoading] = useState(false);
@@ -72,10 +72,10 @@ export default function DashboardPage() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
-    if (!orgId) return;
+    if (!orgId || !accessToken || loadingUser) return;
     loadDashboards();
     loadChannels();
-  }, [orgId]);
+  }, [orgId, accessToken, loadingUser]);
 
   const filteredActivity = useMemo(() => {
     if (!overview) return [];
@@ -89,32 +89,44 @@ export default function DashboardPage() {
   const health = overview?.health ?? { avgP90: null, coldRatio: null };
 
   async function loadDashboards() {
-    if (!orgId) return;
+    if (!orgId || !accessToken) return;
     setDashboardsLoading(true);
     setDashError(undefined);
     try {
       const res = await apiFetch(`${apiBase}/orgs/${orgId}/dashboards`);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || 'Failed to load dashboards');
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        throw new Error(json?.message || 'Failed to load dashboards');
+      }
       setDashboards((json || []).map((item: any) => ({ ...item, config: normalizeConfig(item.config) })));
     } catch (err: any) {
       setDashError(err.message);
+      console.error('Failed to load dashboards:', err);
     } finally {
       setDashboardsLoading(false);
     }
   }
 
   async function loadChannels() {
-    if (!orgId) return;
+    if (!orgId || !accessToken) return;
     setChannelLoading(true);
     setChannelError(undefined);
     try {
       const res = await apiFetch(`${apiBase}/orgs/${orgId}/notifications`);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || 'Failed to load channels');
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        throw new Error(json?.message || 'Failed to load channels');
+      }
       setChannels(json || []);
     } catch (err: any) {
       setChannelError(err.message);
+      console.error('Failed to load channels:', err);
     } finally {
       setChannelLoading(false);
     }
@@ -247,7 +259,7 @@ export default function DashboardPage() {
     value: alert.count,
   })) || [];
 
-  if (loadingOverview) {
+  if (loadingUser || loadingOverview) {
     return (
       <AppShell orgId={orgId}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -257,11 +269,24 @@ export default function DashboardPage() {
     );
   }
 
+  if (!accessToken) {
+    return (
+      <AppShell orgId={orgId}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: 'var(--space-4)' }}>
+          <p style={{ color: 'var(--text-secondary)' }}>Authentication required</p>
+          <Button variant="primary" onClick={() => (window.location.href = '/login')}>
+            Go to Login
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell orgId={orgId}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', paddingTop: 0 }}>
         {/* Header with Demo Mode Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-8)', marginTop: 0 }}>
           <div>
             <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', margin: '0 0 var(--space-2) 0' }}>
               {overview?.org?.name || 'Dashboard'}
@@ -285,7 +310,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions Panel */}
-        <Card variant="elevated" padding="md" style={{ marginBottom: 'var(--space-6)' }}>
+        <Card variant="elevated" padding="md" style={{ marginBottom: 'var(--space-3)' }}>
           <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0' }}>
             Quick Actions
           </h3>
@@ -312,7 +337,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* KPI Cards */}
-        <Grid columns={{ sm: 2, md: 4 }} gap="md" style={{ marginBottom: 'var(--space-6)' }}>
+        <Grid columns={{ sm: 2, md: 4 }} gap="md" style={{ marginBottom: 'var(--space-8)' }}>
           <Card variant="elevated" padding="md">
             <Stat
               label="Functions"
@@ -353,7 +378,7 @@ export default function DashboardPage() {
         </Grid>
 
         {/* Two Column Layout: Checklist + Top Functions */}
-        <Grid columns={{ sm: 1, md: 2 }} gap="lg" style={{ marginBottom: 'var(--space-6)' }}>
+        <Grid columns={{ sm: 1, md: 2 }} gap="lg" style={{ marginBottom: 'var(--space-8)' }}>
           {/* Onboarding Checklist */}
           <OnboardingChecklist
             items={checklist.map((item) => ({
@@ -436,25 +461,42 @@ export default function DashboardPage() {
 
         {/* Charts Row */}
         {p90ChartData.length > 0 && (
-          <Grid columns={{ sm: 1, md: 2 }} gap="lg" style={{ marginBottom: 'var(--space-6)' }}>
+          <Grid columns={{ sm: 1, md: 2 }} gap="lg" style={{ marginBottom: 'var(--space-8)' }}>
             <Card variant="elevated" padding="lg">
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0' }}>
                 P90 Init Trend
                 <InfoTooltip content="P90 initialization time shows the 90th percentile of cold start durations over time." />
               </h3>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={p90ChartData[0]?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                  <XAxis dataKey="timestamp" stroke="var(--text-secondary)" fontSize={12} />
-                  <YAxis stroke="var(--text-secondary)" fontSize={12} />
+                  <XAxis 
+                    dataKey="timestamp" 
+                    stroke="var(--text-secondary)" 
+                    fontSize={12}
+                    tick={{ fill: 'var(--text-secondary)' }}
+                  />
+                  <YAxis 
+                    stroke="var(--text-secondary)" 
+                    fontSize={12}
+                    tick={{ fill: 'var(--text-secondary)' }}
+                  />
                   <RechartsTooltip
                     contentStyle={{
                       background: 'var(--surface-base)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-primary)',
                     }}
                   />
-                  <Line type="monotone" dataKey="value" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="var(--chart-1)" 
+                    strokeWidth={3} 
+                    dot={false}
+                    isAnimationActive={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </Card>
@@ -464,7 +506,7 @@ export default function DashboardPage() {
                 <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0' }}>
                   Alerts by Severity
                 </h3>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={alertsData}
@@ -472,7 +514,7 @@ export default function DashboardPage() {
                       cy="50%"
                       labelLine={false}
                       label={({ name, value }) => `${name}: ${value}`}
-                      outerRadius={80}
+                      outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -480,7 +522,14 @@ export default function DashboardPage() {
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip />
+                    <RechartsTooltip
+                      contentStyle={{
+                        background: 'var(--surface-base)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </Card>
@@ -489,7 +538,7 @@ export default function DashboardPage() {
         )}
 
         {/* Recent Activity Feed */}
-        <Card variant="elevated" padding="lg" style={{ marginBottom: 'var(--space-6)' }}>
+        <Card variant="elevated" padding="lg" style={{ marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: 0 }}>Recent Activity</h3>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
@@ -539,7 +588,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Create Dashboard Form */}
-        <Card id="create-dashboard-form" variant="outlined" padding="lg" style={{ marginBottom: 'var(--space-6)' }}>
+        <Card id="create-dashboard-form" variant="outlined" padding="lg" style={{ marginBottom: 'var(--space-8)' }}>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0' }}>
             Create Dashboard
           </h2>
@@ -667,7 +716,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Saved Dashboards */}
-        <section style={{ marginBottom: 'var(--space-6)' }}>
+        <section style={{ marginBottom: 'var(--space-8)' }}>
           <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0' }}>
             Saved Dashboards
           </h2>

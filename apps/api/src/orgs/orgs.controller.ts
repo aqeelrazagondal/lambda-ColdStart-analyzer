@@ -6,6 +6,7 @@ import { InviteUserDto } from './dto/invite-user.dto';
 import { OrgMemberGuard } from './guards/org-member.guard';
 import { OrgRoleGuard } from './guards/org-role.guard';
 import { RolesAllowed } from './decorators/roles.decorator';
+import { AuditLog } from '../audit/decorators/audit-log.decorator';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('orgs')
@@ -19,6 +20,7 @@ export class OrgsController {
     return { orgs };
   }
 
+  @AuditLog({ action: 'org.create', resourceType: 'organization', includeRequestBody: true })
   @Post()
   async create(@Req() req: any, @Body() dto: CreateOrgDto) {
     const userId = req.user.userId as string;
@@ -26,9 +28,10 @@ export class OrgsController {
     return { id: org.id, name: org.name, createdAt: org.createdAt };
   }
 
-  @Post(':id/invite')
   @UseGuards(OrgMemberGuard, OrgRoleGuard)
   @RolesAllowed('admin', 'owner')
+  @AuditLog({ action: 'org.invite_user', resourceType: 'organization', includeRequestBody: true })
+  @Post(':id/invite')
   async invite(@Req() req: any, @Param('id') orgId: string, @Body() dto: InviteUserDto) {
     // Stub: validate membership + role via guards, then return queued response
     return { status: 'queued', email: dto.email, role: dto.role ?? 'viewer', orgId };

@@ -254,6 +254,64 @@ export function ThemeStyles() {
       
       input, textarea, select {
         font-family: inherit;
+        transition: all var(--transition-fast);
+      }
+      
+      /* Enhanced input styling */
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="number"],
+      input[type="tel"],
+      input[type="url"],
+      textarea,
+      select {
+        background: var(--surface-base);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        border-radius: var(--radius-md);
+        padding: var(--space-3);
+        font-size: var(--text-base);
+        transition: all var(--transition-fast);
+      }
+      
+      input[type="text"]:focus,
+      input[type="email"]:focus,
+      input[type="password"]:focus,
+      input[type="number"]:focus,
+      input[type="tel"]:focus,
+      input[type="url"]:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-bg);
+      }
+      
+      input[type="text"]:hover:not(:focus),
+      input[type="email"]:hover:not(:focus),
+      input[type="password"]:hover:not(:focus),
+      input[type="number"]:hover:not(:focus),
+      input[type="tel"]:hover:not(:focus),
+      input[type="url"]:hover:not(:focus),
+      textarea:hover:not(:focus),
+      select:hover:not(:focus) {
+        border-color: var(--border-base);
+      }
+      
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--text-tertiary);
+        opacity: 0.7;
+      }
+      
+      select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right var(--space-3) center;
+        padding-right: var(--space-10);
+        appearance: none;
       }
       
       /* Focus styles for accessibility */

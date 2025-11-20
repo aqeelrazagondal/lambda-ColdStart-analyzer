@@ -9,7 +9,29 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   // Security & DX
   app.use(helmet());
-  app.enableCors({ origin: true, credentials: true });
+  
+  // CORS configuration - restrict to allowed origins
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
+    : ['http://localhost:3000', 'http://localhost:3001'];
+  
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.) in development
+      if (!origin && process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  });
+  
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })
   );

@@ -133,7 +133,7 @@ const demoOverview: OrgOverview = {
 };
 
 export function OrgDataProvider({ orgId, children }: { orgId: string; children: React.ReactNode }) {
-  const { apiFetch } = useAuth();
+  const { apiFetch, accessToken, loadingUser } = useAuth();
   const [overview, setOverview] = useState<OrgOverview | undefined>();
   const [demoMode, setDemoMode] = useState(false);
   useEffect(() => {
@@ -150,19 +150,25 @@ export function OrgDataProvider({ orgId, children }: { orgId: string; children: 
   const [loadingOverview, setLoadingOverview] = useState(false);
 
   const fetchOverview = useCallback(async () => {
-    if (!orgId || demoMode) return;
+    if (!orgId || demoMode || !accessToken || loadingUser) return;
     setLoadingOverview(true);
     try {
       const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orgs/${orgId}/overview`);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || 'Failed to load overview');
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.error('Authentication failed for overview');
+          return;
+        }
+        throw new Error(json?.message || 'Failed to load overview');
+      }
       setOverview(json);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch overview:', err);
     } finally {
       setLoadingOverview(false);
     }
-  }, [apiFetch, orgId, demoMode]);
+  }, [apiFetch, orgId, demoMode, accessToken, loadingUser]);
 
   useEffect(() => {
     if (demoMode) {
@@ -170,13 +176,15 @@ export function OrgDataProvider({ orgId, children }: { orgId: string; children: 
       setLoadingOverview(false);
       return;
     }
-    fetchOverview();
-  }, [demoMode, fetchOverview]);
+    if (accessToken && !loadingUser) {
+      fetchOverview();
+    }
+  }, [demoMode, fetchOverview, accessToken, loadingUser]);
 
   useEffect(() => {
-    if (demoMode) return;
+    if (demoMode || !accessToken || loadingUser) return;
     fetchOverview();
-  }, [orgId, demoMode, fetchOverview]);
+  }, [orgId, demoMode, fetchOverview, accessToken, loadingUser]);
 
   const value = useMemo<OrgDataContextValue>(
     () => ({

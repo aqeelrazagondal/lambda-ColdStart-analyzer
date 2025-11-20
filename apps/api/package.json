@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.934.0",
+    "@aws-sdk/client-secrets-manager": "^3.935.0",
     "@lca/analysis": "workspace:*",
     "@lca/aws-client": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
@@ -20,6 +21,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.10",
+    "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.20.0",
     "adm-zip": "^0.5.16",
     "bcryptjs": "^2.4.3",

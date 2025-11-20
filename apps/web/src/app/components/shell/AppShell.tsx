@@ -120,236 +120,243 @@ export function AppShell({ orgId, children }: AppShellProps) {
           padding: 'var(--space-3) var(--space-4)',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: 'var(--space-4)',
         }}
       >
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{
-            display: currentOrgId ? 'block' : 'none',
-            background: 'none',
-            border: 'none',
-            fontSize: 'var(--text-xl)',
-            cursor: 'pointer',
-            padding: 'var(--space-2)',
-            color: 'var(--text-primary)',
-          }}
-          aria-label="Toggle menu"
-          className="mobile-menu-button"
-        >
-          ☰
-        </button>
+        {/* Left Section */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flex: 1 }}>
+          {/* Logo - Always visible on left */}
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', textDecoration: 'none', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)' }}>⚡</span>
+            <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)' }}>LCA</span>
+          </Link>
 
-        {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', textDecoration: 'none', color: 'var(--text-primary)' }}>
-          <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)' }}>⚡</span>
-          <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)' }}>LCA</span>
-        </Link>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              display: currentOrgId ? 'block' : 'none',
+              background: 'none',
+              border: 'none',
+              fontSize: 'var(--text-xl)',
+              cursor: 'pointer',
+              padding: 'var(--space-2)',
+              color: 'var(--text-primary)',
+            }}
+            aria-label="Toggle menu"
+            className="mobile-menu-button"
+          >
+            ☰
+          </button>
 
-        {/* Org Switcher */}
-        {currentOrgId && orgs.length > 0 && (
-          <div style={{ position: 'relative', marginLeft: 'auto' }}>
-            <select
-              value={currentOrgId}
-              onChange={(e) => {
-                const newOrg = orgs.find((o) => o.id === e.target.value);
-                if (newOrg) {
-                  window.location.href = `/orgs/${newOrg.id}/dashboard`;
-                }
-              }}
-              style={{
-                padding: 'var(--space-2) var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--surface-base)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--font-medium)',
-                cursor: 'pointer',
-              }}
-            >
-              {orgs.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Global Search */}
-        {currentOrgId && (
-          <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }} className="global-search">
-            <input
-              type="text"
-              placeholder="Search functions, dashboards..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSearchOpen(true);
-              }}
-              onFocus={() => setSearchOpen(true)}
-              onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-              style={{
-                width: '100%',
-                padding: 'var(--space-2) var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-sm)',
-              }}
-            />
-            {searchOpen && searchResults.length > 0 && (
-              <div
+          {/* Org Switcher */}
+          {currentOrgId && orgs.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <select
+                value={currentOrgId}
+                onChange={(e) => {
+                  const newOrg = orgs.find((o) => o.id === e.target.value);
+                  if (newOrg) {
+                    window.location.href = `/orgs/${newOrg.id}/dashboard`;
+                  }
+                }}
                 style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  marginTop: 'var(--space-1)',
-                  background: 'var(--surface-base)',
-                  border: '1px solid var(--border-subtle)',
+                  padding: 'var(--space-2) var(--space-3)',
                   borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  zIndex: 'var(--z-dropdown)',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--surface-base)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  cursor: 'pointer',
                 }}
               >
-                {searchResults.map((result) => (
-                  <Link
-                    key={result.id}
-                    href={result.href}
-                    style={{
-                      display: 'block',
-                      padding: 'var(--space-3)',
-                      textDecoration: 'none',
-                      color: 'var(--text-primary)',
-                      borderBottom: '1px solid var(--border-subtle)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--surface-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <div style={{ fontWeight: 'var(--font-medium)', fontSize: 'var(--text-sm)' }}>{result.label}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-                      {result.type} {result.meta && `• ${result.meta}`}
-                    </div>
-                  </Link>
+                {orgs.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
                 ))}
-              </div>
-            )}
-          </div>
-        )}
+              </select>
+            </div>
+          )}
 
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: 'var(--text-lg)',
-            cursor: 'pointer',
-            padding: 'var(--space-2)',
-            color: 'var(--text-secondary)',
-            borderRadius: 'var(--radius-md)',
-          }}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
-
-        {/* User Menu */}
-        {user && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 'var(--space-2)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              <div
+          {/* Global Search */}
+          {currentOrgId && (
+            <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }} className="global-search">
+              <input
+                type="text"
+                placeholder="Search functions, dashboards..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-inverse)',
-                  fontWeight: 'var(--font-semibold)',
+                  width: '100%',
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
                   fontSize: 'var(--text-sm)',
                 }}
-              >
-                {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
-              </div>
-              <span style={{ fontSize: 'var(--text-sm)', display: 'none' }}>{user.name || user.email}</span>
-            </button>
-            {userMenuOpen && (
-              <div
+              />
+              {searchOpen && searchResults.length > 0 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: 'var(--space-1)',
+                    background: 'var(--surface-base)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    zIndex: 'var(--z-dropdown)',
+                  }}
+                >
+                  {searchResults.map((result) => (
+                    <Link
+                      key={result.id}
+                      href={result.href}
+                      style={{
+                        display: 'block',
+                        padding: 'var(--space-3)',
+                        textDecoration: 'none',
+                        color: 'var(--text-primary)',
+                        borderBottom: '1px solid var(--border-subtle)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--surface-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <div style={{ fontWeight: 'var(--font-medium)', fontSize: 'var(--text-sm)' }}>{result.label}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
+                        {result.type} {result.meta && `• ${result.meta}`}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Section */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 'var(--text-lg)',
+              cursor: 'pointer',
+              padding: 'var(--space-2)',
+              color: 'var(--text-secondary)',
+              borderRadius: 'var(--radius-md)',
+            }}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          {/* User Menu */}
+          {user && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
                 style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: 'var(--space-2)',
-                  background: 'var(--surface-base)',
-                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 'var(--space-2)',
                   borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
-                  minWidth: '200px',
-                  zIndex: 'var(--z-dropdown)',
+                  color: 'var(--text-primary)',
                 }}
               >
-                <div style={{ padding: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>{user.name || 'User'}</div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>{user.email}</div>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--color-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-inverse)',
+                    fontWeight: 'var(--font-semibold)',
+                    fontSize: 'var(--text-sm)',
+                  }}
+                >
+                  {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
                 </div>
-                <div style={{ padding: 'var(--space-1)' }}>
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setUserMenuOpen(false);
-                      window.location.href = '/';
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: 'var(--space-2) var(--space-3)',
-                      background: 'none',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-primary)',
-                      fontSize: 'var(--text-sm)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--surface-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    Sign out
-                  </button>
+                <span style={{ fontSize: 'var(--text-sm)', display: 'none' }}>{user.name || user.email}</span>
+              </button>
+              {userMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 'var(--space-2)',
+                    background: 'var(--surface-base)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    minWidth: '200px',
+                    zIndex: 'var(--z-dropdown)',
+                  }}
+                >
+                  <div style={{ padding: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>{user.name || 'User'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>{user.email}</div>
+                  </div>
+                  <div style={{ padding: 'var(--space-1)' }}>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setUserMenuOpen(false);
+                        window.location.href = '/';
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-2) var(--space-3)',
+                        background: 'none',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--text-primary)',
+                        fontSize: 'var(--text-sm)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--surface-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -425,7 +432,7 @@ export function AppShell({ orgId, children }: AppShellProps) {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: 'var(--space-6)',
+            padding: 'var(--space-8)',
             background: 'var(--bg-secondary)',
           }}
         >

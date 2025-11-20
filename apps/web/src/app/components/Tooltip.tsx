@@ -73,7 +73,7 @@ export function Tooltip({ children, content, position = 'top', delay = 200 }: To
             position: 'absolute',
             top: tooltipPosition?.top || 0,
             left: tooltipPosition?.left || 0,
-            background: 'var(--bg-primary)',
+            background: 'var(--surface-base)',
             color: 'var(--text-primary)',
             padding: 'var(--space-2) var(--space-3)',
             borderRadius: 'var(--radius-md)',

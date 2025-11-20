@@ -108,20 +108,42 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  // Initialize theme from script tag or localStorage to prevent FOUC
+  const getInitialTheme = (): Theme => {
+    if (typeof window === 'undefined') return 'light';
+    const stored = localStorage.getItem('lca-theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? 'dark' : 'light';
+  };
+
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'light';
+    // Check if already set by the blocking script
+    const htmlTheme = document.documentElement.getAttribute('data-theme');
+    if (htmlTheme === 'light' || htmlTheme === 'dark') {
+      return htmlTheme;
+    }
+    return getInitialTheme();
+  });
 
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('lca-theme') : null;
-    if (stored === 'light' || stored === 'dark') {
-      setThemeState(stored);
-    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setThemeState('dark');
+    // Sync with what might have been set by the blocking script
+    const htmlTheme = document.documentElement.getAttribute('data-theme');
+    if (htmlTheme === 'light' || htmlTheme === 'dark') {
+      setThemeState(htmlTheme);
+    } else {
+      const initialTheme = getInitialTheme();
+      setThemeState(initialTheme);
+      document.documentElement.setAttribute('data-theme', initialTheme);
+      document.body.setAttribute('data-theme', initialTheme);
     }
   }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.body.dataset.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
     localStorage.setItem('lca-theme', theme);
   }, [theme]);
 

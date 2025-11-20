@@ -42,23 +42,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'grid', gap: 8, zIndex: 1000 }}>
+      <div style={{ position: 'fixed', right: 'var(--space-4)', bottom: 'var(--space-4)', display: 'grid', gap: 'var(--space-2)', zIndex: 'var(--z-dropdown)' }}>
         {toasts.map((t) => (
           <div key={t.id}
                role="status"
                onClick={() => remove(t.id)}
                style={{
-                 minWidth: 260,
-                 maxWidth: 420,
-                 padding: '12px 16px',
-                 borderRadius: 'var(--radius-lg)',
-                 color: 'var(--text-color)',
-                 background: t.type === 'success' ? 'rgba(16,185,129,0.15)' : t.type === 'error' ? 'rgba(248,113,113,0.18)' : 'var(--surface)',
-                 border: '1px solid var(--border-color)',
-                 boxShadow: 'var(--shadow-sm)'
+                 minWidth: '260px',
+                 maxWidth: '420px',
+                 padding: 'var(--space-3) var(--space-4)',
+                 borderRadius: 'var(--radius-md)',
+                 color: 'var(--text-primary)',
+                 background: t.type === 'success' ? 'var(--color-success-bg)' : t.type === 'error' ? 'var(--color-error-bg)' : 'var(--surface-base)',
+                 border: '1px solid var(--border-subtle)',
+                 boxShadow: 'var(--shadow-lg)',
+                 cursor: 'pointer',
+                 transition: 'all var(--transition-fast)',
+               }}
+               onMouseEnter={(e) => {
+                 e.currentTarget.style.opacity = '0.9';
+               }}
+               onMouseLeave={(e) => {
+                 e.currentTarget.style.opacity = '1';
                }}>
-            <strong style={{ textTransform: 'capitalize' }}>{t.type}</strong>
-            <div style={{ fontSize: 14 }}>{t.message}</div>
+            <strong style={{ textTransform: 'capitalize', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>{t.type}</strong>
+            <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{t.message}</div>
           </div>
         ))}
       </div>

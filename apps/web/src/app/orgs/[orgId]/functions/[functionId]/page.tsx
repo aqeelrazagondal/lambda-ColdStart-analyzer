@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthContext';
+import { AppShell } from '../../../../components/shell/AppShell';
+import { Card, Stat, Button, Grid, Badge, Spinner, EmptyState } from '@lca/ui-components';
 import {
   Area,
   AreaChart,
@@ -414,16 +416,18 @@ export default function FunctionDetailPage() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Function Detail</h1>
-        <div style={{ marginLeft: 'auto' }}>
-          <Link href={`/orgs/${params.orgId}/functions`}>← Back to Functions</Link>
+    <AppShell orgId={params.orgId}>
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+          <h1 style={{ margin: 0, fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', color: 'var(--text-primary)' }}>
+            Function Detail
+          </h1>
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/orgs/${params.orgId}/functions`)}>
+            ← Back to Functions
+          </Button>
         </div>
-      </div>
 
-      <div style={{ marginTop: 12 }}>
-        <nav style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 8 }}>
+        <nav style={{ display: 'flex', gap: 'var(--space-6)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-2)' }}>
           {[
             { id: 'cold-starts', label: 'Cold Starts' },
             { id: 'bundle-audit', label: 'Bundle Audit' },
@@ -434,9 +438,24 @@ export default function FunctionDetailPage() {
               style={{
                 border: 'none',
                 background: 'transparent',
-                fontWeight: tab === t.id ? 600 : 400,
-                color: tab === t.id ? 'var(--text-strong)' : 'var(--text-muted)',
+                fontWeight: tab === t.id ? 'var(--font-semibold)' : 'var(--font-normal)',
+                color: tab === t.id ? 'var(--color-primary)' : 'var(--text-secondary)',
                 cursor: 'pointer',
+                padding: 'var(--space-2) var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                transition: 'all var(--transition-fast)',
+                borderBottom: tab === t.id ? '2px solid var(--color-primary)' : '2px solid transparent',
+                marginBottom: '-2px',
+              }}
+              onMouseEnter={(e) => {
+                if (tab !== t.id) {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (tab !== t.id) {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }
               }}
             >
               {t.label}
@@ -447,116 +466,222 @@ export default function FunctionDetailPage() {
 
       {tab === 'cold-starts' && (
         <>
-          <section style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <label>
-              Range
-              <select value={range} onChange={(e) => setRange(e.target.value)} style={{ marginLeft: 8 }}>
-                <option value="1d">1d</option>
-                <option value="7d">7d</option>
-                <option value="14d">14d</option>
-              </select>
-            </label>
-            <label>
-              Region
-              <select
-                value={selectedRegion ?? ''}
-                onChange={(e) => setSelectedRegion(e.target.value || undefined)}
-                style={{ marginLeft: 8 }}
-                disabled={!regionOptions.length}
-              >
-                {regionOptions.length === 0 && <option value="">Default</option>}
-                {regionOptions.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button onClick={load} disabled={loading} aria-busy={loading}>
-              Reload
-            </button>
-            <button onClick={onRefresh} disabled={refreshing} aria-busy={refreshing}>
-              Refresh metrics
-            </button>
-            <button onClick={onCopyQuery}>Copy Logs Insights query</button>
-            <button onClick={() => downloadMetrics('csv')} disabled={exporting === 'csv'}>
-              {exporting === 'csv' ? 'Preparing CSV…' : 'Download CSV'}
-            </button>
-            <button onClick={() => downloadMetrics('pdf')} disabled={exporting === 'pdf'}>
-              {exporting === 'pdf' ? 'Preparing PDF…' : 'Download PDF'}
-            </button>
-          </section>
+          <Card variant="outlined" padding="md" style={{ marginBottom: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: 'var(--text-secondary)' }}>
+                  Range:
+                </label>
+                <select 
+                  value={range} 
+                  onChange={(e) => setRange(e.target.value)}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--surface-base)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-sm)',
+                  }}
+                >
+                  <option value="1d">1d</option>
+                  <option value="7d">7d</option>
+                  <option value="14d">14d</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: 'var(--text-secondary)' }}>
+                  Region:
+                </label>
+                <select
+                  value={selectedRegion ?? ''}
+                  onChange={(e) => setSelectedRegion(e.target.value || undefined)}
+                  disabled={!regionOptions.length}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--surface-base)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-sm)',
+                  }}
+                >
+                  {regionOptions.length === 0 && <option value="">Default</option>}
+                  {regionOptions.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginLeft: 'auto' }}>
+                <Button variant="outline" size="sm" onClick={load} disabled={loading} isLoading={loading}>
+                  Reload
+                </Button>
+                <Button variant="primary" size="sm" onClick={onRefresh} disabled={refreshing} isLoading={refreshing}>
+                  Refresh metrics
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onCopyQuery}>
+                  Copy Query
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => downloadMetrics('csv')} disabled={exporting === 'csv'} isLoading={exporting === 'csv'}>
+                  {exporting === 'csv' ? 'Preparing…' : 'CSV'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => downloadMetrics('pdf')} disabled={exporting === 'pdf'} isLoading={exporting === 'pdf'}>
+                  {exporting === 'pdf' ? 'Preparing…' : 'PDF'}
+                </Button>
+              </div>
+            </div>
+          </Card>
 
-          {loading && <div style={{ marginTop: 12 }}>Loading metrics…</div>}
-          {error && <div style={{ marginTop: 12, color: 'crimson' }}>{error}</div>}
-          {info && <div style={{ marginTop: 12, color: 'seagreen' }}>{info}</div>}
+          {loading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
+              <Spinner size="sm" />
+              <span>Loading metrics…</span>
+            </div>
+          )}
+          {error && (
+            <div style={{ 
+              padding: 'var(--space-3)', 
+              background: 'var(--color-error-bg)', 
+              color: 'var(--color-error)', 
+              borderRadius: 'var(--radius-md)', 
+              marginBottom: 'var(--space-4)' 
+            }}>
+              {error}
+            </div>
+          )}
+          {info && (
+            <div style={{ 
+              padding: 'var(--space-3)', 
+              background: 'var(--color-success-bg)', 
+              color: 'var(--color-success)', 
+              borderRadius: 'var(--radius-md)', 
+              marginBottom: 'var(--space-4)' 
+            }}>
+              {info}
+            </div>
+          )}
 
           {!loading && !error && (
-            <section style={{ marginTop: 16 }}>
+            <>
               {!snapshot ? (
-                <div style={{ color: 'var(--text-muted)' }}>No snapshot in this range yet. Try refreshing metrics.</div>
+                <Card variant="outlined" padding="lg">
+                  <EmptyState 
+                    icon="📊" 
+                    title="No metrics available" 
+                    description="No snapshot in this range yet. Try refreshing metrics to collect data." 
+                  />
+                </Card>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 }}>
-                  <Card title="Cold invocations" value={snapshot.coldCount} />
-                  <Card title="Warm invocations" value={snapshot.warmCount} />
-                  <Card title="P50 Init (ms)" value={snapshot.p50InitMs ?? '—'} />
-                  <Card title="P90 Init (ms)" value={snapshot.p90InitMs ?? '—'} />
-                  <Card title="P99 Init (ms)" value={snapshot.p99InitMs ?? '—'} />
-                </div>
+                <Grid columns={{ sm: 2, md: 5 }} gap="md" style={{ marginBottom: 'var(--space-6)' }}>
+                  <Card variant="elevated" padding="md">
+                    <Stat label="Cold invocations" value={snapshot.coldCount.toLocaleString()} variant="error" />
+                  </Card>
+                  <Card variant="elevated" padding="md">
+                    <Stat label="Warm invocations" value={snapshot.warmCount.toLocaleString()} variant="success" />
+                  </Card>
+                  <Card variant="elevated" padding="md">
+                    <Stat label="P50 Init" value={snapshot.p50InitMs ? `${snapshot.p50InitMs}ms` : '—'} />
+                  </Card>
+                  <Card variant="elevated" padding="md">
+                    <Stat label="P90 Init" value={snapshot.p90InitMs ? `${snapshot.p90InitMs}ms` : '—'} variant="warning" />
+                  </Card>
+                  <Card variant="elevated" padding="md">
+                    <Stat label="P99 Init" value={snapshot.p99InitMs ? `${snapshot.p99InitMs}ms` : '—'} variant="error" />
+                  </Card>
+                </Grid>
               )}
 
               {featureCharts && (
-                <section style={{ marginTop: 20 }}>
-                  <h3 style={{ margin: '8px 0' }}>Trends & Distribution</h3>
+                <div style={{ marginBottom: 'var(--space-6)' }}>
                   {bucketLoading ? (
-                    <div style={{ color: 'var(--text-muted)' }}>Loading chart data…</div>
+                    <Card variant="outlined" padding="lg">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--text-secondary)' }}>
+                        <Spinner size="sm" />
+                        <span>Loading chart data…</span>
+                      </div>
+                    </Card>
                   ) : bucketError ? (
-                    <div style={{ color: 'crimson' }}>{bucketError}</div>
+                    <Card variant="outlined" padding="lg">
+                      <div style={{ color: 'var(--color-error)' }}>{bucketError}</div>
+                    </Card>
                   ) : bucketSeries.length === 0 ? (
-                    <div style={{ color: 'var(--text-muted)' }}>No chart data captured yet.</div>
+                    <Card variant="outlined" padding="lg">
+                      <EmptyState icon="📈" title="No chart data" description="No chart data captured yet. Metrics will appear here once data is collected." />
+                    </Card>
                   ) : (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                        gap: 16,
-                      }}
-                    >
-                      <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-                        <h4 style={{ marginTop: 0 }}>P90 init (ms)</h4>
-                        <div style={{ width: '100%', height: 240 }}>
+                    <Grid columns={{ sm: 1, md: 2 }} gap="lg">
+                      <Card variant="elevated" padding="lg">
+                        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0', color: 'var(--text-primary)' }}>
+                          P90 Init Time Trend
+                        </h3>
+                        <div style={{ width: '100%', height: 280 }}>
                           <ResponsiveContainer>
                             <LineChart data={chartData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="label" />
-                              <YAxis />
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                              <XAxis 
+                                dataKey="label" 
+                                stroke="var(--text-secondary)" 
+                                fontSize={12}
+                                tick={{ fill: 'var(--text-secondary)' }}
+                              />
+                              <YAxis 
+                                stroke="var(--text-secondary)" 
+                                fontSize={12}
+                                tick={{ fill: 'var(--text-secondary)' }}
+                              />
                               <Tooltip
+                                contentStyle={{
+                                  background: 'var(--surface-base)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: 'var(--radius-md)',
+                                  color: 'var(--text-primary)',
+                                }}
                                 labelFormatter={(_, payload) =>
                                   payload && payload[0] ? payload[0].payload.tooltipLabel : ''
                                 }
-                                formatter={(value) => [`${value ?? '—'}`, 'P90 init (ms)']}
+                                formatter={(value) => [`${value ?? '—'} ms`, 'P90 Init']}
                               />
                               <Line
                                 type="monotone"
                                 dataKey="avgP90InitMs"
-                                stroke="#2563eb"
-                                strokeWidth={2}
+                                stroke="var(--chart-1)"
+                                strokeWidth={3}
                                 dot={false}
                                 isAnimationActive={false}
                               />
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
-                      </div>
-                      <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-                        <h4 style={{ marginTop: 0 }}>Warm vs cold invocations</h4>
-                        <div style={{ width: '100%', height: 240 }}>
+                      </Card>
+                      <Card variant="elevated" padding="lg">
+                        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0', color: 'var(--text-primary)' }}>
+                          Warm vs Cold Invocations
+                        </h3>
+                        <div style={{ width: '100%', height: 280 }}>
                           <ResponsiveContainer>
                             <AreaChart data={chartData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="label" />
-                              <YAxis allowDecimals={false} />
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                              <XAxis 
+                                dataKey="label" 
+                                stroke="var(--text-secondary)" 
+                                fontSize={12}
+                                tick={{ fill: 'var(--text-secondary)' }}
+                              />
+                              <YAxis 
+                                allowDecimals={false}
+                                stroke="var(--text-secondary)" 
+                                fontSize={12}
+                                tick={{ fill: 'var(--text-secondary)' }}
+                              />
                               <Tooltip
+                                contentStyle={{
+                                  background: 'var(--surface-base)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: 'var(--radius-md)',
+                                  color: 'var(--text-primary)',
+                                }}
                                 labelFormatter={(_, payload) =>
                                   payload && payload[0] ? payload[0].payload.tooltipLabel : ''
                                 }
@@ -565,8 +690,9 @@ export default function FunctionDetailPage() {
                                 type="monotone"
                                 dataKey="coldCount"
                                 stackId="counts"
-                                stroke="#dc2626"
-                                fill="#fecaca"
+                                stroke="var(--chart-5)"
+                                fill="var(--chart-5)"
+                                fillOpacity={0.6}
                                 name="Cold"
                                 isAnimationActive={false}
                               />
@@ -574,158 +700,296 @@ export default function FunctionDetailPage() {
                                 type="monotone"
                                 dataKey="warmCount"
                                 stackId="counts"
-                                stroke="#16a34a"
-                                fill="#bbf7d0"
+                                stroke="var(--chart-3)"
+                                fill="var(--chart-3)"
+                                fillOpacity={0.6}
                                 name="Warm"
                                 isAnimationActive={false}
                               />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
-                      </div>
-                    </div>
+                      </Card>
+                    </Grid>
                   )}
-                </section>
+                </div>
               )}
-            </section>
+            </>
           )}
 
-          <section style={{ marginTop: 24 }}>
-            <h3>Alerts</h3>
+          <Card variant="elevated" padding="lg">
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0', color: 'var(--text-primary)' }}>
+              Alerts
+            </h3>
             {alertsLoading ? (
-              <div>Checking alerts…</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--text-secondary)' }}>
+                <Spinner size="sm" />
+                <span>Checking alerts…</span>
+              </div>
             ) : alertsError ? (
-              <div style={{ color: 'crimson' }}>{alertsError}</div>
+              <div style={{ padding: 'var(--space-3)', background: 'var(--color-error-bg)', color: 'var(--color-error)', borderRadius: 'var(--radius-md)' }}>
+                {alertsError}
+              </div>
             ) : alerts.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)' }}>No active alerts 🎉</div>
+              <EmptyState icon="✅" title="No active alerts" description="All systems are running smoothly!" />
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {alerts.map((alert) => (
-                  <li
+                  <div
                     key={alert.id}
                     style={{
-                      border: '1px solid var(--border-color)',
-                      borderLeft: `4px solid ${alert.severity === 'critical' ? '#b91c1c' : '#f97316'}`,
-                      borderRadius: 8,
-                      padding: 12,
-                      marginBottom: 8,
+                      border: '1px solid var(--border-subtle)',
+                      borderLeft: `4px solid ${alert.severity === 'critical' ? 'var(--color-error)' : 'var(--color-warning)'}`,
+                      borderRadius: 'var(--radius-md)',
+                      padding: 'var(--space-4)',
+                      background: 'var(--surface-base)',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-base)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
-                    <div style={{ fontWeight: 600 }}>{alert.message}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-subtle)' }}>Region: {alert.region} • Metric: {alert.metric} • Status: {alert.status}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(alert.createdAt).toLocaleString()}</div>
-                  </li>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 'var(--space-2)' }}>
+                      <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>
+                        {alert.message}
+                      </div>
+                      <Badge variant={alert.severity === 'critical' ? 'error' : 'warning'} size="sm">
+                        {alert.severity}
+                      </Badge>
+                    </div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-1)' }}>
+                      Region: {alert.region} • Metric: {alert.metric} • Status: {alert.status}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                      {new Date(alert.createdAt).toLocaleString()}
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
-          </section>
+          </Card>
         </>
       )}
 
       {tab === 'bundle-audit' && (
         <>
-          {bundleLoading && <div style={{ marginTop: 12 }}>Loading bundle insights…</div>}
-          {bundleError && <div style={{ marginTop: 12, color: 'crimson' }}>{bundleError}</div>}
-          {bundleInfo && <div style={{ marginTop: 12, color: 'seagreen' }}>{bundleInfo}</div>}
+          {bundleLoading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
+              <Spinner size="sm" />
+              <span>Loading bundle insights…</span>
+            </div>
+          )}
+          {bundleError && (
+            <div style={{ 
+              padding: 'var(--space-3)', 
+              background: 'var(--color-error-bg)', 
+              color: 'var(--color-error)', 
+              borderRadius: 'var(--radius-md)', 
+              marginBottom: 'var(--space-4)' 
+            }}>
+              {bundleError}
+            </div>
+          )}
+          {bundleInfo && (
+            <div style={{ 
+              padding: 'var(--space-3)', 
+              background: 'var(--color-success-bg)', 
+              color: 'var(--color-success)', 
+              borderRadius: 'var(--radius-md)', 
+              marginBottom: 'var(--space-4)' 
+            }}>
+              {bundleInfo}
+            </div>
+          )}
 
-          <section style={{ marginTop: 16, border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Upload new bundle</h3>
-            <p style={{ marginTop: 4, color: 'var(--text-subtle)' }}>
-              Drop the Lambda deployment ZIP you ship to AWS. We queue it, analyze dependencies, and surface
-              recommendations.
+          <Card variant="elevated" padding="lg" style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-2) 0', color: 'var(--text-primary)' }}>
+              Upload new bundle
+            </h3>
+            <p style={{ marginTop: 0, marginBottom: 'var(--space-4)', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+              Drop the Lambda deployment ZIP you ship to AWS. We queue it, analyze dependencies, and surface recommendations.
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".zip"
                 onChange={onFileChange}
+                style={{
+                  padding: 'var(--space-2)',
+                  fontSize: 'var(--text-sm)',
+                }}
               />
-              <button onClick={onUploadBundle} disabled={uploading || !selectedFile} aria-busy={uploading}>
+              <Button 
+                variant="primary" 
+                size="md" 
+                onClick={onUploadBundle} 
+                disabled={uploading || !selectedFile} 
+                isLoading={uploading}
+              >
                 {uploading ? 'Uploading…' : selectedFile ? `Upload ${selectedFile.name}` : 'Choose a file first'}
-              </button>
+              </Button>
             </div>
             {selectedFile && (
-              <div style={{ marginTop: 8, color: 'var(--text-muted)' }}>
-                Selected file: {selectedFile.name} ({formatBytes(selectedFile.size)})
+              <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--surface-muted)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                Selected file: <strong>{selectedFile.name}</strong> ({formatBytes(selectedFile.size)})
               </div>
             )}
-          </section>
+          </Card>
 
-          <section style={{ marginTop: 24 }}>
-            <h3 style={{ marginTop: 0 }}>Latest insight</h3>
+          <Card variant="elevated" padding="lg" style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0', color: 'var(--text-primary)' }}>
+              Latest insight
+            </h3>
             {!bundleLatest ? (
-              <div style={{ color: 'var(--text-muted)' }}>Upload a bundle to see recommendations.</div>
+              <EmptyState icon="📦" title="No bundle insights" description="Upload a bundle to see recommendations and analysis." />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-                <Card title="Total size" value={formatBytes(bundleLatest.totalSizeBytes)} />
-                <Card title="Score (0-100)" value={bundleLatest.score ?? '—'} />
-                <Card title="Dependencies" value={bundleLatest.dependencyCount ?? '—'} />
-              </div>
-            )}
+              <>
+                <Grid columns={{ sm: 1, md: 3 }} gap="md" style={{ marginBottom: 'var(--space-6)' }}>
+                  <Card variant="outlined" padding="md">
+                    <Stat label="Total size" value={formatBytes(bundleLatest.totalSizeBytes)} />
+                  </Card>
+                  <Card variant="outlined" padding="md">
+                    <Stat 
+                      label="Score (0-100)" 
+                      value={bundleLatest.score ?? '—'} 
+                      variant={bundleLatest.score && bundleLatest.score >= 80 ? 'success' : bundleLatest.score && bundleLatest.score >= 60 ? 'warning' : 'error'}
+                    />
+                  </Card>
+                  <Card variant="outlined" padding="md">
+                    <Stat label="Dependencies" value={bundleLatest.dependencyCount?.toLocaleString() ?? '—'} />
+                  </Card>
+                </Grid>
 
-            {bundleLatest && (
-              <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-                  <h4 style={{ marginTop: 0 }}>Top dependencies</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {(bundleLatest.topDependencies || []).map((dep) => (
-                      <li key={dep.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                        <span>{dep.name}</span>
-                        <span style={{ color: 'var(--text-subtle)' }}>{formatBytes(dep.sizeBytes || 0)}</span>
-                      </li>
-                    ))}
-                    {(!bundleLatest.topDependencies || bundleLatest.topDependencies.length === 0) && (
-                      <li style={{ color: 'var(--text-muted)' }}>No dependency data captured</li>
+                <Grid columns={{ sm: 1, md: 2 }} gap="lg">
+                  <Card variant="outlined" padding="md">
+                    <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)' }}>
+                      Top dependencies
+                    </h4>
+                    {(!bundleLatest.topDependencies || bundleLatest.topDependencies.length === 0) ? (
+                      <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>No dependency data captured</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                        {(bundleLatest.topDependencies || []).map((dep) => (
+                          <div key={dep.name} style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            padding: 'var(--space-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'var(--surface-muted)',
+                          }}>
+                            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{dep.name}</span>
+                            <Badge variant="default" size="sm">{formatBytes(dep.sizeBytes || 0)}</Badge>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </ul>
-                </div>
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-                  <h4 style={{ marginTop: 0 }}>Recommendations</h4>
-                  <ul>
-                    {(bundleLatest.recommendations || []).map((rec, idx) => (
-                      <li key={idx}>{rec}</li>
-                    ))}
-                    {(!bundleLatest.recommendations || bundleLatest.recommendations.length === 0) && (
-                      <li>Bundle looks healthy 🎉</li>
+                  </Card>
+                  <Card variant="outlined" padding="md">
+                    <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)' }}>
+                      Recommendations
+                    </h4>
+                    {(!bundleLatest.recommendations || bundleLatest.recommendations.length === 0) ? (
+                      <div style={{ 
+                        padding: 'var(--space-3)', 
+                        background: 'var(--color-success-bg)', 
+                        color: 'var(--color-success)', 
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--text-sm)',
+                      }}>
+                        Bundle looks healthy 🎉
+                      </div>
+                    ) : (
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                        {(bundleLatest.recommendations || []).map((rec, idx) => (
+                          <li 
+                            key={idx}
+                            style={{
+                              padding: 'var(--space-2)',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--color-warning-bg)',
+                              color: 'var(--color-warning)',
+                              fontSize: 'var(--text-sm)',
+                            }}
+                          >
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                  </ul>
-                </div>
-              </div>
+                  </Card>
+                </Grid>
+              </>
             )}
-          </section>
+          </Card>
 
-          <section style={{ marginTop: 32 }}>
-            <h3 style={{ marginTop: 0 }}>Upload history</h3>
+          <Card variant="elevated" padding="lg">
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-4) 0', color: 'var(--text-primary)' }}>
+              Upload history
+            </h3>
             {bundleUploads.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)' }}>No uploads yet.</div>
+              <EmptyState icon="📋" title="No uploads yet" description="Upload your first bundle to see it here." />
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-                      <th style={{ padding: '8px 4px' }}>Filename</th>
-                      <th style={{ padding: '8px 4px' }}>Size</th>
-                      <th style={{ padding: '8px 4px' }}>Status</th>
-                      <th style={{ padding: '8px 4px' }}>Uploaded</th>
-                      <th style={{ padding: '8px 4px' }}>Processed</th>
-                      <th style={{ padding: '8px 4px' }}>Score</th>
+                    <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-subtle)' }}>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Filename</th>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Size</th>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Status</th>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Uploaded</th>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Processed</th>
+                      <th style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-secondary)' }}>Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bundleUploads.map((upload) => (
-                      <tr key={upload.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '8px 4px' }}>{upload.originalFilename}</td>
-                        <td style={{ padding: '8px 4px' }}>{formatBytes(upload.sizeBytes)}</td>
-                        <td style={{ padding: '8px 4px', textTransform: 'capitalize' }}>{upload.status}</td>
-                        <td style={{ padding: '8px 4px' }}>
+                      <tr 
+                        key={upload.id} 
+                        style={{ 
+                          borderBottom: '1px solid var(--border-subtle)',
+                          transition: 'background var(--transition-fast)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--surface-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{upload.originalFilename}</td>
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{formatBytes(upload.sizeBytes)}</td>
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+                          <Badge 
+                            variant={upload.status === 'completed' ? 'success' : upload.status === 'failed' ? 'error' : 'default'} 
+                            size="sm"
+                          >
+                            {upload.status}
+                          </Badge>
+                        </td>
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                           {new Date(upload.createdAt).toLocaleString()}
                         </td>
-                        <td style={{ padding: '8px 4px' }}>
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                           {upload.processedAt ? new Date(upload.processedAt).toLocaleString() : '—'}
                         </td>
-                        <td style={{ padding: '8px 4px' }}>
-                          {upload.insight?.score ?? '—'}
+                        <td style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+                          {upload.insight?.score !== null && upload.insight?.score !== undefined ? (
+                            <Badge 
+                              variant={upload.insight.score >= 80 ? 'success' : upload.insight.score >= 60 ? 'warning' : 'error'} 
+                              size="sm"
+                            >
+                              {upload.insight.score}
+                            </Badge>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -733,21 +997,13 @@ export default function FunctionDetailPage() {
                 </table>
               </div>
             )}
-          </section>
+          </Card>
         </>
       )}
-    </main>
+    </AppShell>
   );
 }
 
-function Card({ title, value }: { title: string; value: React.ReactNode }) {
-  return (
-    <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{title}</div>
-      <div style={{ fontSize: 20, fontWeight: 600 }}>{value}</div>
-    </div>
-  );
-}
 
 function formatBytes(bytes?: number | null) {
   if (!bytes || bytes <= 0) return '0 B';

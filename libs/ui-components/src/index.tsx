@@ -11,9 +11,10 @@ export interface CardProps {
   onClick?: () => void;
   variant?: 'default' | 'elevated' | 'outlined' | 'interactive';
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  style?: React.CSSProperties;
 }
 
-export function Card({ title, children, className = '', onClick, variant = 'default', padding = 'md' }: CardProps) {
+export function Card({ title, children, className = '', onClick, variant = 'default', padding = 'md', style }: CardProps) {
   const baseStyles: React.CSSProperties = {
     background: 'var(--surface-base)',
     borderRadius: 'var(--radius-lg)',
@@ -56,7 +57,7 @@ export function Card({ title, children, className = '', onClick, variant = 'defa
   return (
     <section
       className={className}
-      style={{ ...baseStyles, ...variantStyles[variant], ...paddingStyles[padding] }}
+      style={{ ...baseStyles, ...variantStyles[variant], ...paddingStyles[padding], ...style }}
       onClick={onClick}
       onMouseEnter={(e) => {
         if (onClick) {
@@ -259,7 +260,6 @@ export function Button({
     fontFamily: 'inherit',
     opacity: disabled || isLoading ? 0.6 : 1,
     width: fullWidth ? '100%' : 'auto',
-    ...style,
   };
 
   const sizeStyles: Record<string, React.CSSProperties> = {
@@ -301,10 +301,16 @@ export function Button({
     },
   };
 
+  const combinedStyles = {
+    ...baseStyles,
+    ...sizeStyles[size],
+    ...variantStyles[variant],
+  };
+
   return (
     <button
       className={className}
-      style={{ ...baseStyles, ...sizeStyles[size], ...variantStyles[variant] }}
+      style={{ ...combinedStyles, ...style }}
       disabled={disabled || isLoading}
       onMouseEnter={(e) => {
         if (!disabled && !isLoading) {
@@ -497,28 +503,67 @@ export interface GridProps {
   columns?: number | { sm?: number; md?: number; lg?: number };
   gap?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function Grid({ children, columns = 3, gap = 'md', className = '' }: GridProps) {
+export function Grid({ children, columns = 3, gap = 'md', className = '', style }: GridProps) {
   const gapSizes = {
     sm: 'var(--space-2)',
     md: 'var(--space-4)',
     lg: 'var(--space-6)',
   };
 
-  const columnsValue = typeof columns === 'number' ? columns : columns.lg || 3;
+  if (typeof columns === 'number') {
+    return (
+      <div
+        className={className}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          gap: gapSizes[gap],
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  const sm = columns.sm || 1;
+  const md = columns.md || columns.sm || 2;
+  const lg = columns.lg || columns.md || columns.sm || 3;
+
+  // Use a stable ID based on the column configuration
+  const gridClass = `grid-${sm}-${md}-${lg}`;
 
   return (
-    <div
-      className={className}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${columnsValue}, 1fr)`,
-        gap: gapSizes[gap],
-      }}
-    >
-      {children}
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .${gridClass} {
+            display: grid;
+            grid-template-columns: repeat(${sm}, 1fr);
+            gap: ${gapSizes[gap]};
+          }
+          @media (min-width: 769px) {
+            .${gridClass} {
+              grid-template-columns: repeat(${md}, 1fr) !important;
+            }
+          }
+          @media (min-width: 1025px) {
+            .${gridClass} {
+              grid-template-columns: repeat(${lg}, 1fr) !important;
+            }
+          }
+        `
+      }} />
+      <div
+        className={`${className} ${gridClass}`}
+        style={style}
+      >
+        {children}
+      </div>
+    </>
   );
 }
 

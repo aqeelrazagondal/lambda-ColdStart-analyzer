@@ -25,10 +25,10 @@ export function OnboardingChecklist({ items, orgId, onAction }: OnboardingCheckl
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <Card variant="elevated" padding="lg">
+    <Card variant="elevated" padding="lg" style={{ height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <div>
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-1) 0' }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-2) 0' }}>
             Getting Started
           </h3>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>

@@ -3,6 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { METRICS_REFRESH_JOB, METRICS_REFRESH_QUEUE } from './scheduler.constants';
 import { SchedulerConfigService } from './scheduler.config.service';
+import { AUDIT_CLEANUP_JOB, AUDIT_CLEANUP_QUEUE } from '../audit/audit-cleanup.job';
 
 @Injectable()
 export class SchedulerService implements OnModuleInit {
@@ -13,6 +14,7 @@ export class SchedulerService implements OnModuleInit {
 
   constructor(
     @InjectQueue(METRICS_REFRESH_QUEUE) private readonly queue: Queue,
+    @InjectQueue(AUDIT_CLEANUP_QUEUE) private readonly auditCleanupQueue: Queue,
     private readonly config: SchedulerConfigService
   ) {}
 
@@ -23,6 +25,7 @@ export class SchedulerService implements OnModuleInit {
     }
 
     await this.registerRepeatableJob();
+    await this.registerAuditCleanupJob();
     await this.config.ensureDefaultSchedules();
     const schedules = await this.config.listActiveSchedules();
     this.logger.log(`Loaded ${schedules.length} active refresh schedules`);
@@ -40,6 +43,25 @@ export class SchedulerService implements OnModuleInit {
         repeat: {
           cron: this.cronExpression,
           tz: this.timezone,
+        },
+      }
+    );
+  }
+
+  private async registerAuditCleanupJob() {
+    const cleanupCron = process.env.AUDIT_CLEANUP_CRON || '0 2 * * *'; // Daily at 2 AM
+    const cleanupTz = process.env.AUDIT_CLEANUP_TZ || 'UTC';
+    this.logger.log(`Registering audit cleanup cron (${cleanupCron} ${cleanupTz})`);
+    await this.auditCleanupQueue.add(
+      AUDIT_CLEANUP_JOB,
+      {},
+      {
+        priority: 1,
+        removeOnComplete: true,
+        removeOnFail: false,
+        repeat: {
+          cron: cleanupCron,
+          tz: cleanupTz,
         },
       }
     );

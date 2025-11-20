@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../providers/AuthContext';
+import { Button } from '@lca/ui-components';
+import { Input } from '../components/forms/Input';
+import { Form } from '../components/forms/Form';
 
 export default function RegisterPage() {
   const { setAccessToken, setUser } = useAuth();
@@ -11,12 +14,14 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(undefined);
+    setLoading(true);
     try {
       const res = await fetch(`${apiBase}/auth/register`, {
         method: 'POST',
@@ -27,11 +32,13 @@ export default function RegisterPage() {
       if (!res.ok) {
         throw new Error(data?.message || 'Register failed');
       }
-      setAccessToken(data.accessToken);
+      setAccessToken(data.accessToken, data.refreshToken);
       setUser(data.user);
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Register failed');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -42,44 +49,125 @@ export default function RegisterPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--space-3xl)',
+        padding: 'var(--space-6)',
+        background: 'var(--bg-primary)',
       }}
     >
-      <section
+      <div
         style={{
           width: '100%',
           maxWidth: 480,
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-2xl)',
-          boxShadow: 'var(--shadow-sm)',
-          background: 'var(--surface)',
+          position: 'relative',
         }}
       >
-        <h1 style={{ marginTop: 0 }}>Create your workspace</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Spin up a new organization in seconds.</p>
-        <form onSubmit={onSubmit} style={{ display: 'grid', gap: 16, marginTop: 16 }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            Name
-            <input value={name} onChange={(e) => setName(e.target.value)} type="text" placeholder="Ada Lovelace" />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
-          </label>
-          {error && <div style={{ color: 'var(--danger)' }}>{error}</div>}
-          <button type="submit" data-variant="primary">
-            Create account
-          </button>
-        </form>
-        <p style={{ marginTop: 16 }}>
-          Already have an account? <Link href="/login">Log in</Link>
-        </p>
-      </section>
+        {/* Decorative background element */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-20%',
+            right: '-20%',
+            width: '400px',
+            height: '400px',
+            background: 'radial-gradient(circle, var(--accent-purple) 0%, transparent 70%)',
+            opacity: 0.2,
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-20%',
+            left: '-20%',
+            width: '300px',
+            height: '300px',
+            background: 'radial-gradient(circle, var(--color-primary-bg) 0%, transparent 70%)',
+            opacity: 0.3,
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        
+        <section
+          style={{
+            width: '100%',
+            position: 'relative',
+            zIndex: 1,
+            background: 'var(--surface-base)',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-subtle)',
+            padding: 'var(--space-8)',
+            boxShadow: 'var(--shadow-xl)',
+          }}
+        >
+          {/* Logo/Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
+            <span style={{ fontSize: 'var(--text-2xl)' }}>⚡</span>
+            <span style={{ fontSize: 'var(--text-sm)', opacity: 0.9, letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 'var(--font-semibold)' }}>
+              Lambda Cold-Start Analyzer
+            </span>
+          </div>
+
+          <Form
+            title="Create your workspace"
+            description="Spin up a new organization in seconds. Start monitoring your Lambda functions right away."
+            error={error}
+            onSubmit={onSubmit}
+            footer={
+              <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                  Already have an account?{' '}
+                  <Link
+                    href="/login"
+                    style={{
+                      color: 'var(--color-primary)',
+                      fontWeight: 'var(--font-medium)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            }
+          >
+            <Input
+              label="Full Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ada Lovelace"
+              leftIcon={<span>👤</span>}
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              leftIcon={<span>📧</span>}
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a strong password"
+              required
+              leftIcon={<span>🔒</span>}
+              helperText="Use at least 8 characters with a mix of letters and numbers"
+            />
+            <Button type="submit" variant="primary" size="lg" fullWidth isLoading={loading}>
+              Create account
+            </Button>
+          </Form>
+        </section>
+      </div>
     </main>
   );
 }

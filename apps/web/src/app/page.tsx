@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from './providers/AuthContext';
 import { AppShell } from './components/shell/AppShell';
 import { Card, Stat, Button, Grid, EmptyState } from '@lca/ui-components';
+import { Input } from './components/forms/Input';
 
 type OrgRecord = { id: string; name: string };
 
@@ -27,6 +28,41 @@ export default function HomePage() {
   }, [accessToken, apiBase, apiFetch]);
 
   const primaryCtaHref = orgs[0] ? `/orgs/${orgs[0].id}/dashboard` : '/register';
+  const [showCreateOrg, setShowCreateOrg] = useState(false);
+  const [orgName, setOrgName] = useState('');
+  const [creatingOrg, setCreatingOrg] = useState(false);
+  const [createOrgError, setCreateOrgError] = useState<string | undefined>();
+
+  async function handleCreateOrg(e: React.FormEvent) {
+    e.preventDefault();
+    if (!orgName.trim() || !accessToken) return;
+    setCreatingOrg(true);
+    setCreateOrgError(undefined);
+    try {
+      const res = await apiFetch(`${apiBase}/orgs`, {
+        method: 'POST',
+        body: JSON.stringify({ name: orgName.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || 'Failed to create organization');
+      setOrgName('');
+      setShowCreateOrg(false);
+      // Reload orgs to show the new one
+      const orgsRes = await apiFetch(`${apiBase}/orgs`);
+      const orgsData = await orgsRes.json();
+      if (orgsRes.ok) {
+        setOrgs(orgsData?.orgs || []);
+        // Redirect to the new org's dashboard
+        if (json.id) {
+          window.location.href = `/orgs/${json.id}/dashboard`;
+        }
+      }
+    } catch (err: any) {
+      setCreateOrgError(err.message || 'Failed to create organization');
+    } finally {
+      setCreatingOrg(false);
+    }
+  }
 
   // Unauthenticated landing page
   if (!accessToken) {
@@ -92,7 +128,15 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" style={{ borderColor: '#fff', color: '#fff', background: 'transparent' }}>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  style={{
+                    borderColor: '#fff',
+                    color: '#111',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                  }}
+                >
                   I already have access
                 </Button>
               </Link>
@@ -259,18 +303,77 @@ export default function HomePage() {
               ))}
             </Grid>
           ) : (
-            <Card variant="outlined" padding="lg">
-              <EmptyState
-                icon="🏢"
-                title="No organizations yet"
-                description="Create your first organization to start monitoring Lambda functions and optimizing cold starts."
-                action={{
-                  label: 'Create organization',
-                  onClick: () => (window.location.href = '/settings/aws-accounts'),
-                  variant: 'primary',
-                }}
-              />
-            </Card>
+            <>
+              {!showCreateOrg ? (
+                <Card variant="outlined" padding="lg">
+                  <EmptyState
+                    icon="🏢"
+                    title="No organizations yet"
+                    description="Create your first organization to start monitoring Lambda functions and optimizing cold starts."
+                    action={{
+                      label: 'Create organization',
+                      onClick: () => setShowCreateOrg(true),
+                      variant: 'primary',
+                    }}
+                  />
+                </Card>
+              ) : (
+                <Card variant="elevated" padding="lg">
+                  <div style={{ marginBottom: 'var(--space-4)' }}>
+                    <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', margin: '0 0 var(--space-2) 0' }}>
+                      Create Organization
+                    </h2>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                      Give your organization a name to get started
+                    </p>
+                  </div>
+                  {createOrgError && (
+                    <div
+                      style={{
+                        padding: 'var(--space-3)',
+                        background: 'var(--color-error-bg)',
+                        color: 'var(--color-error)',
+                        borderRadius: 'var(--radius-md)',
+                        marginBottom: 'var(--space-4)',
+                        fontSize: 'var(--text-sm)',
+                      }}
+                    >
+                      {createOrgError}
+                    </div>
+                  )}
+                  <form onSubmit={handleCreateOrg} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                    <Input
+                      label="Organization Name"
+                      type="text"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      placeholder="My Company"
+                      required
+                      leftIcon={<span>🏢</span>}
+                      autoFocus
+                    />
+                    <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                      <Button type="submit" variant="primary" size="md" isLoading={creatingOrg} disabled={!orgName.trim()}>
+                        Create Organization
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="md"
+                        onClick={() => {
+                          setShowCreateOrg(false);
+                          setOrgName('');
+                          setCreateOrgError(undefined);
+                        }}
+                        disabled={creatingOrg}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Card>
+              )}
+            </>
           )}
         </section>
       </div>

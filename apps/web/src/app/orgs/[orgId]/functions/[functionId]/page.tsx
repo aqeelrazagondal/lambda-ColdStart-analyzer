@@ -177,21 +177,26 @@ export default function FunctionDetailPage() {
         throw new Error(json?.message || 'Failed to load metrics');
       }
       setSnapshot(json?.snapshot || null);
-      // reflect range in URL (client)
-      const clientUrl = `/orgs/${params.orgId}/functions/${functionId}?${queryParams.toString()}`;
+      // reflect range in URL (client), preserving tab parameter
+      const clientQuery = new URLSearchParams(queryParams);
+      if (tab) {
+        clientQuery.set('tab', tab);
+      }
+      const clientUrl = `/orgs/${params.orgId}/functions/${functionId}?${clientQuery.toString()}`;
       (router as any).replace(clientUrl);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [apiBase, apiFetch, functionId, params.orgId, queryParams, router, loadingUser, accessToken]);
+  }, [apiBase, apiFetch, functionId, params.orgId, queryParams, router, loadingUser, accessToken, tab]);
 
   useEffect(() => {
-    if (tab === 'cold-starts') {
+    // Only load metrics when on cold-starts tab
+    if (tab === 'cold-starts' && !loadingUser && accessToken) {
       load();
     }
-  }, [load, tab]);
+  }, [load, tab, loadingUser, accessToken]);
 
   useEffect(() => {
     if (tab !== 'cold-starts' || !selectedRegion) return;

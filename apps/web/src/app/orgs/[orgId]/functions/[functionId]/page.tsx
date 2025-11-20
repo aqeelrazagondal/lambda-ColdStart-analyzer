@@ -88,7 +88,7 @@ type MetricsBucketPoint = {
 type Tab = 'cold-starts' | 'bundle-audit';
 
 export default function FunctionDetailPage() {
-  const { apiFetch } = useAuth();
+  const { apiFetch, accessToken, loadingUser } = useAuth();
   const params = useParams<{ orgId: string; functionId: string }>();
   const router = useRouter();
   const sp = useSearchParams();
@@ -142,12 +142,18 @@ export default function FunctionDetailPage() {
   }, [range]);
 
   useEffect(() => {
-    if (!functionId) return;
+    if (!functionId || loadingUser || !accessToken) return;
     (async () => {
       try {
         const res = await apiFetch(`${apiBase}/functions/${functionId}/regions`);
         const json = await res.json();
-        if (!res.ok) throw new Error(json?.message || 'Failed to load regions');
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.error('Authentication required');
+            return;
+          }
+          throw new Error(json?.message || 'Failed to load regions');
+        }
         const options = Array.isArray(json?.regions) ? json.regions : [];
         setRegionOptions(options);
         setSelectedRegion((prev) => prev ?? options[0]);
@@ -155,16 +161,21 @@ export default function FunctionDetailPage() {
         console.warn('Failed to load regions', err);
       }
     })();
-  }, [apiBase, apiFetch, functionId]);
+  }, [apiBase, apiFetch, functionId, loadingUser, accessToken]);
 
   const load = useCallback(async () => {
-    if (!functionId) return;
+    if (!functionId || loadingUser || !accessToken) return;
     setLoading(true); setError(undefined); setInfo(undefined);
     try {
       const url = `${apiBase}/functions/${functionId}/metrics?${queryParams.toString()}`;
       const res = await apiFetch(url);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || 'Failed to load metrics');
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        throw new Error(json?.message || 'Failed to load metrics');
+      }
       setSnapshot(json?.snapshot || null);
       // reflect range in URL (client)
       const clientUrl = `/orgs/${params.orgId}/functions/${functionId}?${queryParams.toString()}`;
@@ -174,7 +185,7 @@ export default function FunctionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [apiBase, apiFetch, functionId, params.orgId, queryParams, router]);
+  }, [apiBase, apiFetch, functionId, params.orgId, queryParams, router, loadingUser, accessToken]);
 
   useEffect(() => {
     if (tab === 'cold-starts') {
@@ -194,7 +205,7 @@ export default function FunctionDetailPage() {
   }, [tab, functionId]);
 
   const loadBundleData = useCallback(async () => {
-    if (!functionId || !params.orgId) return;
+    if (!functionId || !params.orgId || loadingUser || !accessToken) return;
     setBundleLoading(true);
     setBundleError(undefined);
     setBundleInfo(undefined);
@@ -214,7 +225,7 @@ export default function FunctionDetailPage() {
     } finally {
       setBundleLoading(false);
     }
-  }, [apiBase, apiFetch, functionId, params.orgId]);
+  }, [apiBase, apiFetch, functionId, params.orgId, loadingUser, accessToken]);
 
   useEffect(() => {
     if (tab === 'bundle-audit') {

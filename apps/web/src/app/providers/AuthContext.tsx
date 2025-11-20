@@ -221,7 +221,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers.set('Content-Type', 'application/json');
       }
       
+      // Get token from state, or fallback to localStorage if not yet loaded
       let token = accessToken;
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem(TOKEN_STORAGE_KEY) || undefined;
+      }
+      
       if (token) {
         // Check if token is about to expire
         const expiration = getTokenExpiration(token);

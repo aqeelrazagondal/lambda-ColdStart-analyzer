@@ -31,7 +31,7 @@ interface ListResponse {
 }
 
 export default function OrgFunctionsPage() {
-  const { apiFetch } = useAuth();
+  const { apiFetch, accessToken, loadingUser } = useAuth();
   const params = useParams<{ orgId: string }>();
   const orgId = params?.orgId;
   const router = useRouter();
@@ -64,14 +64,19 @@ export default function OrgFunctionsPage() {
   }, [region, runtime, q, pagination.page, pagination.pageSize]);
 
   const load = React.useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId || loadingUser || !accessToken) return;
     setLoading(true);
     setError(undefined);
     try {
       const url = `${API_BASE_URL}/orgs/${orgId}/functions?${query.toString()}`;
       const res = await apiFetch(url);
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || 'Failed to load functions');
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        throw new Error(json?.message || 'Failed to load functions');
+      }
       setData(json);
       const uniqueRegions = new Set<string>();
       (json.items || []).forEach((item: any) => {
@@ -85,7 +90,7 @@ export default function OrgFunctionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, query, apiFetch, router]);
+  }, [orgId, query, apiFetch, router, loadingUser, accessToken]);
 
   useEffect(() => {
     load();

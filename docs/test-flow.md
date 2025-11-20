@@ -186,12 +186,28 @@ pnpm dev
    
    f. **External ID**: Generate a unique string (e.g., `lca-external-id-2025-11-19`)
    
-   **Note**: The trust policy is automatically generated when you configure these settings. You don't need to manually edit the trust policy JSON. The automatically generated trust policy will look like:
+   **Optional: If you need to manually edit the trust policy JSON**, you may see this default template in AWS Console:
    ```json
    {
      "Version": "2012-10-17",
      "Statement": [
        {
+         "Sid": "Statement1",
+         "Effect": "Allow",
+         "Principal": {},
+         "Action": "sts:AssumeRole"
+       }
+     ]
+   }
+   ```
+   
+   **Modify it to** (replace `YOUR_ACCOUNT_ID` with your 12-digit AWS account ID and `lca-external-id-2025-11-19` with your chosen external ID):
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "Statement1",
          "Effect": "Allow",
          "Principal": {
            "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root"
@@ -206,7 +222,8 @@ pnpm dev
      ]
    }
    ```
-   **Do not modify this** - it's correct as-is. Trust policies have a Principal (who can assume the role) and do NOT have a Resource field.
+   
+   **Note**: When you select "AWS account" and check "Require external ID" in the console, AWS automatically generates the trust policy with the correct Principal and Condition. You typically don't need to manually edit this JSON. Trust policies have a Principal (who can assume the role) and do NOT have a Resource field.
    
    g. Click **Next**
 

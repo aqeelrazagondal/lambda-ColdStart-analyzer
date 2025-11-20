@@ -92,14 +92,34 @@ Create a read-only IAM role in your AWS account with the following steps:
 
 3. **Copy the Role ARN** for use in the next step (format: `arn:aws:iam::YOUR_ACCOUNT:role/LambdaColdStartAnalyzerRole`)
 
-**Important**: The trust policy is automatically created when you configure the role with "AWS account" + external ID. It will look like:
+**Important**: The trust policy is automatically created when you configure the role with "AWS account" + external ID.
+
+If you see this **default template** in AWS Console when editing the trust policy:
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "Statement1",
       "Effect": "Allow",
-      "Principal": { "AWS": "arn:aws:iam::YOUR_ACCOUNT:root" },
+      "Principal": {},
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+**Modify it to** (replace `YOUR_ACCOUNT` with your 12-digit AWS account ID and `your-unique-external-id` with your chosen external ID):
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Statement1",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::YOUR_ACCOUNT:root"
+      },
       "Action": "sts:AssumeRole",
       "Condition": {
         "StringEquals": {
@@ -110,7 +130,8 @@ Create a read-only IAM role in your AWS account with the following steps:
   ]
 }
 ```
-You don't need to manually create this - AWS Console generates it automatically.
+
+**Note**: When you select "AWS account" and check "Require external ID" in the console, AWS typically generates this automatically. Trust policies have a Principal (who can assume the role) and do NOT have a Resource field.
 
 ### 3. Connect the AWS Account
 
